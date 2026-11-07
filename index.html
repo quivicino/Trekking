@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
   <div class="app">
@@ -179,7 +179,9 @@
           Dati: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> e chi contribuisce
           (licenza ODbL); mappa topografica © <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA);
           quote del terreno da <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM);
-          percorribilità e tempi dal <a href="https://osm2cai.cai.it" target="_blank" rel="noopener">Catasto sentieri CAI</a> (OSM2CAI).
+          percorribilità e tempi dal <a href="https://osm2cai.cai.it" target="_blank" rel="noopener">Catasto sentieri CAI</a> (OSM2CAI);
+          in Sardegna anche i sentieri di <a href="https://www.sardegnasentieri.it" target="_blank" rel="noopener">Sardegna Sentieri</a>
+          © Agenzia Forestas (<a href="https://www.sardegnasentieri.it/pagina-base/note-legali" target="_blank" rel="noopener">CC BY-NC-SA</a>).
           Le informazioni sono inserite da volontari e possono essere incomplete o non aggiornate: prima di partire controlla
           meteo, stato dei sentieri e apertura dei rifugi. Se trovi un errore puoi correggerlo su OpenStreetMap.
         </footer>
@@ -305,11 +307,14 @@
         <section id="g-dati">
           <h3>Da dove vengono i dati</h3>
           <ul class="g-punti">
-            <li>Sentieri, rifugi e fontanelle vengono da <b>OpenStreetMap</b>. Per tutta la <b>Lombardia</b> (e 15 km oltre i confini)
+            <li>Sentieri, rifugi e fontanelle vengono da <b>OpenStreetMap</b>. In <b>Lombardia</b>, <b>Valle d'Aosta</b> e <b>Sardegna</b> (e 15 km oltre i confini)
               ogni lunedì il sito li scarica e li tiene pronti: lì l'app è veloce e non dipende dai server di OpenStreetMap.
-              Fuori dalla Lombardia l'app li chiede ogni volta a OpenStreetMap, e può volerci più di un minuto.</li>
+              Fuori da queste regioni l'app li chiede ogni volta a OpenStreetMap, e può volerci più di un minuto.</li>
             <li>Percorribilità, tempi e dislivelli dei sentieri accatastati vengono dal <b>Catasto sentieri CAI</b>
-              (<a href="https://osm2cai.cai.it" target="_blank" rel="noopener">OSM2CAI</a>), anche questi aggiornati ogni lunedì, solo per la Lombardia.</li>
+              (<a href="https://osm2cai.cai.it" target="_blank" rel="noopener">OSM2CAI</a>), anche questi aggiornati ogni lunedì, per le stesse tre regioni.</li>
+            <li>In <b>Sardegna</b>, dove su OpenStreetMap i sentieri sono pochi, si aggiungono quelli della Rete Escursionistica regionale
+              che OpenStreetMap non ha ancora, dal catalogo <a href="https://www.sardegnasentieri.it" target="_blank" rel="noopener">Sardegna Sentieri</a>
+              dell'Agenzia Forestas (licenza CC BY-NC-SA), con il loro stato («Percorribile», «In revisione»…) e i loro tempi.</li>
             <li>Gli ultimi dati scaricati restano sul telefono: se in montagna non c'è campo, l'app usa quelli.</li>
             <li>La <b>difficoltà</b> è quella indicata dal CAI (tag <i>cai_scale</i>); se manca si usa la scala svizzera convertita. Se non c'è nessuna delle due il sentiero è grigio.</li>
             <li>Il <b>segnavia</b> è quello descritto su OpenStreetMap (tag <i>osmc:symbol</i>); per i sentieri CAI senza descrizione si mostra il classico bianco e rosso.</li>
@@ -355,7 +360,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="config.js?v=25"></script>
-  <script src="core.js?v=17"></script>
+  <script src="core.js?v=18"></script>
   <script src="app.js?v=25"></script>
   <script src="installa.js?v=20"></script>
 

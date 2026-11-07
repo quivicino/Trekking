@@ -180,11 +180,20 @@
   // con gli altri dati. Chiave: numero della relazione OpenStreetMap. Se il file non c'è, se ne fa a meno.
   let cai = {};
   const salvati = new Map();   // sentieri salvati per l'uso senza rete: id → { s, cai, tessere, mappa, quando }
-  const datoCai = (s) => (s && s.i && s.i[0] === "r" ? cai[s.i.slice(1)] || (salvati.has(s.i) && salvati.get(s.i).cai) || null : null);
-  const PERCORRIBILITA = { ok: "Percorribile", parz: "Percorribile in parte", no: "Non percorribile" };
+  // I sentieri di Sardegna Sentieri (id "f…", Agenzia Forestas) hanno stato, tempi e scheda in "x", con la stessa forma.
+  const daForestas = (s) => !!(s && s.i && s.i[0] === "f");
+  const datoCai = (s) => (daForestas(s) ? s.x || null
+    : s && s.i && s.i[0] === "r" ? cai[s.i.slice(1)] || (salvati.has(s.i) && salvati.get(s.i).cai) || null : null);
+  const PERCORRIBILITA = { ok: "Percorribile", parz: "Percorribile in parte", no: "Non percorribile", ver: "Da verificare" };
+  const SCHEDA_FORESTAS = "https://www.sardegnasentieri.it";
   const avvisoCai = (s) => { const c = datoCai(s); return c && (c.s === "no" || c.s === "parz") ? c.s : null; };
   function boxCai(c) {
     const quando = c.d ? " · segnalazione del " + c.d.split("-").reverse().join("/") : "";
+    if (c.st != null) {
+      // Sardegna Sentieri: "Percorribile", "In revisione-validazione", "In pre-accatastamento o manutenzione", "Non verificato"
+      return `<div class="cai-stato cai-${c.s}"><b>${c.s === "ok" ? "✓" : c.s === "ver" ? "?" : "⚠"} ${esc(c.st || PERCORRIBILITA[c.s])}</b>` +
+        `<span>secondo Sardegna Sentieri (Agenzia Forestas)</span></div>`;
+    }
     return `<div class="cai-stato cai-${c.s}"><b>${c.s === "ok" ? "✓" : "⚠"} ${PERCORRIBILITA[c.s]}</b>` +
       `<span>secondo il Catasto sentieri CAI${quando}</span>${c.n ? `<p>${esc(c.n)}</p>` : ""}</div>`;
   }
@@ -277,6 +286,33 @@
     mancanti.forEach((t, i) => tessereSito.set(t, parti[i]));
     return nomi.map((t) => tessereSito.get(t));
   }
+  // Sentieri di Sardegna Sentieri (Agenzia Forestas) che OpenStreetMap non ha: tessere a parte in dati/res/
+  let indiceRes = null, indiceResLetto = 0;
+  async function leggiIndiceRes(forza) {
+    if (!forza && Date.now() - indiceResLetto < 30 * 60000) return indiceRes;
+    indiceResLetto = Date.now();
+    try {
+      const nuovo = await fetchJson("dati/res/indice.json", { cache: "no-cache" }, 10000);
+      if (indiceRes && nuovo.aggiornato !== indiceRes.aggiornato) for (const t of [...tessereSito.keys()]) if (t.startsWith("res/")) tessereSito.delete(t);
+      indiceRes = nuovo;
+    } catch (e) { indiceRes = null; }
+    return indiceRes;
+  }
+  // Sentieri e punti delle tessere "base" (più le tessere di casa dei sentieri che ci passano); "pre" = cartella
+  async function daTessere(pre, esistenti, base) {
+    const nomi = base.filter((t) => esistenti.has(t)).map((t) => pre + t);
+    const vicine = await leggiTessere(nomi);
+    // sentieri che passano di qui ma sono salvati in altre tessere
+    const altrove = new Set();
+    for (const c of vicine) for (const casa of Object.values(c.r || {})) if (!nomi.includes(pre + casa) && esistenti.has(casa)) altrove.add(pre + casa);
+    const lontane = await leggiTessere([...altrove]);
+    const servono = new Set(vicine.flatMap((c) => [...(c.s || []).map((x) => x.i), ...Object.keys(c.r || {})]));
+    return {
+      // filtro: una volta sola per sentiero (dopo un aggiornamento parziale può stare in due tessere)
+      sentieri: vicine.concat(lontane).flatMap((c) => c.s || []).filter((x) => servono.delete(x.i)),
+      punti: vicine.flatMap((c) => c.p || [])
+    };
+  }
   async function dalSito(lat, lon, raggio, forza) {
     const ind = await leggiIndice(forza);
     if (!ind || !(ind.zone || ind.zona) || !ind.tessere) return null;
@@ -287,26 +323,21 @@
     // blocchi che GitHub non è riuscito a scaricare (per esempio una regione appena aggiunta): meglio Overpass
     if ((ind.mancanti || []).some(dentro)) return null;
     const passo = ind.passo || 0.1;
-    const esistenti = new Set(ind.tessere);
     const [s, w, n, e] = QT.riquadro(lat, lon, raggio);
-    const nomi = [];
+    const base = [];
     for (let i = Math.floor(s / passo); i <= Math.floor(n / passo); i++) {
-      for (let j = Math.floor(w / passo); j <= Math.floor(e / passo); j++) {
-        const t = `t_${i}_${j}.json`;
-        if (esistenti.has(t)) nomi.push(t);
-      }
+      for (let j = Math.floor(w / passo); j <= Math.floor(e / passo); j++) base.push(`t_${i}_${j}.json`);
     }
-    const vicine = await leggiTessere(nomi);
-    // sentieri che passano di qui ma sono salvati in altre tessere
-    const altrove = new Set();
-    for (const c of vicine) for (const casa of Object.values(c.r || {})) if (!nomi.includes(casa) && esistenti.has(casa)) altrove.add(casa);
-    const lontane = await leggiTessere([...altrove]);
-    const servono = new Set(vicine.flatMap((c) => [...(c.s || []).map((x) => x.i), ...Object.keys(c.r || {})]));
+    const osm = await daTessere("", new Set(ind.tessere), base);
+    let res = { sentieri: [] };
+    try {
+      const ir = await leggiIndiceRes(forza);
+      if (ir && ir.tessere) res = await daTessere("res/", new Set(ir.tessere), base);
+    } catch (e) { console.warn("Sentieri di Sardegna Sentieri non disponibili", e); }
     return {
       lat, lon, raggio,
-      // filtro: una volta sola per sentiero (dopo un aggiornamento parziale può stare in due tessere)
-      sentieri: vicine.concat(lontane).flatMap((c) => c.s || []).filter((x) => servono.delete(x.i)),
-      punti: vicine.flatMap((c) => c.p || []),
+      sentieri: osm.sentieri.concat(res.sentieri),
+      punti: osm.punti,
       quando: Date.parse(ind.aggiornato) || Date.now()
     };
   }
@@ -532,8 +563,9 @@
     // con il dislivello stimato sul tratto in zona, anche il tempo vale per quel tratto
     if (c && c.af) {
       // tempi del Catasto CAI: andata (da partenza ad arrivo) e ritorno
-      caselle.push([QT.formattaOre(c.af), "tempo CAI" + (c.ar && c.ar !== c.af ? " andata" : "")]);
-      if (c.ar && c.ar !== c.af) caselle.push([QT.formattaOre(c.ar), "tempo CAI ritorno"]);
+      const chi = c.st != null ? "Forestas" : "CAI";
+      caselle.push([QT.formattaOre(c.af), "tempo " + chi + (c.ar && c.ar !== c.af ? " andata" : "")]);
+      if (c.ar && c.ar !== c.af) caselle.push([QT.formattaOre(c.ar), "tempo " + chi + " ritorno"]);
     } else {
       const min = s.t || (su != null ? QT.tempoStimato(daTag ? s.l : s.lv || s.l, su, giu) : null);
       if (min) caselle.push([QT.formattaOre(min), s.t ? "tempo indicato" : "tempo <i>stima" + (daTag ? "" : zona) + "</i>"]);
@@ -564,7 +596,8 @@
     const c = datoCai(s);
     if (c && c.s) {
       righe.push(boxCai(c));
-      voce.push(PERCORRIBILITA[c.s] + " secondo il CAI." + (c.n ? " " + c.n : ""));
+      voce.push(c.st != null ? (c.st || PERCORRIBILITA[c.s]) + " secondo Sardegna Sentieri."
+        : PERCORRIBILITA[c.s] + " secondo il CAI." + (c.n ? " " + c.n : ""));
     }
     righe.push(`<div class="pop-num" data-num="${attr(s.i)}">${numeriSentiero(s, q)}</div>`);
     righe.push(`<div class="pop-profilo" data-prof="${attr(s.i)}">${profiloSvg(q)}</div>`);
@@ -572,13 +605,20 @@
     if (s.nota) righe.push(`<p>${esc(s.nota)}</p>`);
     righe.push(`<p>Il punto più vicino è a ${QT.formattaDistanza(s.distanza)} in linea d'aria</p>`);
     voce.push("Il punto più vicino è a " + distanzaParlata(s.distanza) + ".");
-    righe.push(`<p class="fonte">Fonte: <a href="https://www.openstreetmap.org/relation/${attr(s.i.slice(1))}" target="_blank" rel="noopener">OpenStreetMap</a>` + (s.su == null && !(c && c.su != null) ? "; quote: Copernicus DEM (Open-Meteo)" : "") +
-      (c ? `; percorribilità e tempi: <a href="https://osm2cai.cai.it/hiking-route/id/${attr(c.id)}" target="_blank" rel="noopener">Catasto sentieri CAI</a>` : "") + "</p>");
+    if (daForestas(s)) {
+      righe.push(`<p class="fonte">Fonte: <a href="${attr((c && c.u) || SCHEDA_FORESTAS)}" target="_blank" rel="noopener">Sardegna Sentieri</a>, ` +
+        `© Agenzia Forestas, licenza <a href="${SCHEDA_FORESTAS}/pagina-base/note-legali" target="_blank" rel="noopener">CC BY-NC-SA</a></p>`);
+    } else {
+      righe.push(`<p class="fonte">Fonte: <a href="https://www.openstreetmap.org/relation/${attr(s.i.slice(1))}" target="_blank" rel="noopener">OpenStreetMap</a>` + (s.su == null && !(c && c.su != null) ? "; quote: Copernicus DEM (Open-Meteo)" : "") +
+        (c ? `; percorribilità e tempi: <a href="https://osm2cai.cai.it/hiking-route/id/${attr(c.id)}" target="_blank" rel="noopener">Catasto sentieri CAI</a>` : "") + "</p>");
+    }
     const a = attacco(s);
     const pulsanti = [`<a class="pop-vai" href="${linkNavigazione(a[0], a[1])}" target="_blank" rel="noopener">In auto al sentiero</a>`, BOTTONE_CAMMINA];
     const sv = streetView(s);
     const invia = `<a class="pop-vai pop-whatsapp" href="${attr(linkWhatsApp(s))}" target="_blank" rel="noopener">${ICONA_WA}Invia Sentiero con WhatsApp</a>`;
-    const waymarked = `<a class="pop-link" href="https://hiking.waymarkedtrails.org/#route?id=${attr(s.i.slice(1))}" target="_blank" rel="noopener">Profilo e dettagli su Waymarked Trails</a>`;
+    const waymarked = daForestas(s)
+      ? `<a class="pop-link" href="${attr((c && c.u) || SCHEDA_FORESTAS)}" target="_blank" rel="noopener">Scheda completa su Sardegna Sentieri</a>`
+      : `<a class="pop-link" href="https://hiking.waymarkedtrails.org/#route?id=${attr(s.i.slice(1))}" target="_blank" rel="noopener">Profilo e dettagli su Waymarked Trails</a>`;
     const testa = `<div class="pop-testa">${segnavia(s, 30)}<h3>${esc(tit)}</h3></div>`;
     return `<div class="pop pop-sentiero" data-voce="${attr(voce.join(" "))}" data-sentiero="${attr(s.i)}">${testa}${righe.join("")}
       <div class="pop-pulsanti">${pulsanti.join("")}</div>${sv}<div class="pop-offline"></div>${scaricaHtml(s)}${invia}${waymarked}</div>`;
@@ -590,6 +630,8 @@
   // dell'app (semplificata, e per le alte vie solo il tratto in zona).
   const dettagliWmt = new Map();
   function dettaglioWmt(s) {
+    // i sentieri di Sardegna Sentieri non sono su Waymarked Trails: il file si fa con la traccia dell'app
+    if (daForestas(s)) { const p = Promise.reject(new Error("non su OpenStreetMap")); p.catch(() => {}); return p; }
     if (!dettagliWmt.has(s.i)) {
       const p = fetchJson(`https://hiking.waymarkedtrails.org/api/v1/details/relation/${s.i.slice(1)}`, {}, 15000)
         .then((d) => { p.valore = d; return d; })
@@ -645,10 +687,12 @@
         ridotto = true;
       }
       const nome = QT.titoloSentiero(s);
-      const testo = QT.fileTraccia(linee, nome, formato, {
-        fonte: "Dati © OpenStreetMap (ODbL)" + (ridotto ? "" : " via Waymarked Trails"),
-        osm: "https://www.openstreetmap.org/relation/" + s.i.slice(1)
-      });
+      const forestas = daForestas(s), c = datoCai(s);
+      const testo = QT.fileTraccia(linee, nome, formato, forestas
+        ? { fonte: "Dati © Agenzia Forestas – Sardegna Sentieri (CC BY-NC-SA)", osm: (c && c.u) || SCHEDA_FORESTAS,
+            etichetta: "Sardegna Sentieri", autore: "Agenzia Forestas", licenza: SCHEDA_FORESTAS + "/pagina-base/note-legali" }
+        : { fonte: "Dati © OpenStreetMap (ODbL)" + (ridotto ? "" : " via Waymarked Trails"), osm: "https://www.openstreetmap.org/relation/" + s.i.slice(1) });
+      if (forestas) ridotto = false;
       const nomeF = QT.nomeFile(nome, formato);
       consegnaFile(testo, nomeF, QT.FORMATI[formato].tipo);
       if (ridotto) toast(s.parz ? "Waymarked Trails non risponde: file con il solo tratto in zona" : "Waymarked Trails non risponde: file con la traccia semplificata dell'app");

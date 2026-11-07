@@ -58,5 +58,10 @@ Impostazioni del repository → Pages → Source: **GitHub Actions**. A ogni mod
 - `aggiorna_cai.js`: (Lombardia, Valle d'Aosta e Sardegna) percorribilità (con nota e data), tempi e dislivelli dal Catasto sentieri CAI (OSM2CAI) in `dati/cai.json`.
   OSM2CAI accetta 60 richieste al minuto e va interrogato un sentiero alla volta: si riparte dal file pubblicato e si chiedono
   solo i sentieri nuovi o cambiati (al massimo 45 minuti per giro; la prima volta servono due o tre giri per tutti i ~4.000)
+- `aggiorna_res.js`: (Sardegna) sentieri e cammini della Rete Escursionistica della Sardegna (Agenzia Forestas,
+  [Sardegna Sentieri](https://www.sardegnasentieri.it), licenza CC BY-NC-SA) che OpenStreetMap non ha: li prende dal servizio
+  della loro mappa (Webmapp, app 32), uno al secondo e solo quelli nuovi o cambiati (si riparte da `dati/res/tutti.json` pubblicato),
+  scarta quelli che per l'80% coincidono con un sentiero di OpenStreetMap e salva le tessere in `dati/res/` (id `f` + numero Forestas).
+  Va eseguito dopo `aggiorna_sentieri.js`
 - `dati/`: sentieri e punti, creata da GitHub solo nel sito pubblicato (non sta nel repository)
 - `icon-*.png`, `favicon-64.png`, `apple-touch-icon.png`: logo Qui con le montagne

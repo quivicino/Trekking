@@ -702,8 +702,8 @@
     const segs = linee.map((l) => "<trkseg>" + l.map((p) => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join("") + "</trkseg>").join("\n");
     return '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<gpx version="1.1" creator="Qui-Trekking" xmlns="http://www.topografix.com/GPX/1/1">\n' +
-      `<metadata><name>${xml(nome)}</name>${info.fonte ? `<copyright author="OpenStreetMap"><license>https://opendatacommons.org/licenses/odbl/</license></copyright>` : ""}` +
-      `${info.osm ? `<link href="${xml(info.osm)}"><text>OpenStreetMap</text></link>` : ""}</metadata>\n` +
+      `<metadata><name>${xml(nome)}</name>${info.fonte ? `<copyright author="${xml(info.autore || "OpenStreetMap")}"><license>${xml(info.licenza || "https://opendatacommons.org/licenses/odbl/")}</license></copyright>` : ""}` +
+      `${info.osm ? `<link href="${xml(info.osm)}"><text>${xml(info.etichetta || "OpenStreetMap")}</text></link>` : ""}</metadata>\n` +
       `<trk><name>${xml(nome)}</name>\n${segs}\n</trk>\n</gpx>\n`;
   }
   /** Nome del file senza caratteri vietati */
