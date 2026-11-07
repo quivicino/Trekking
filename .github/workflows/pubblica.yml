@@ -40,6 +40,8 @@ jobs:
         env:
           SITO: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
           FORZA: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          # la copia del computer con tutta l'Italia occupa qualche GB in memoria
+          NODE_OPTIONS: --max-old-space-size=6144
         run: node aggiorna_sentieri.js
 
       # Percorribilità, note e tempi del Catasto sentieri CAI (OSM2CAI). Si chiedono solo i sentieri
