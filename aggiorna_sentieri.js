@@ -28,7 +28,7 @@ const SARDEGNA = [38.85, 8.12, 41.32, 9.84];   // con le isole minori (Asinara, 
 const ZONE = [LOMBARDIA, VALLE_AOSTA, SARDEGNA];   // zone scaricate da Overpass (riserva)
 // Con la copia del computer di paolo (PBF Italia di Geofabrik) si salva tutta l'Italia
 const ITALIA = [35.28, 6.62, 47.10, 18.53];
-const COPIA_PC = process.env.COPIA_PC || "https://github.com/quivicino/Trekkiing/releases/download/dati-osm/trekking.json.gz";
+const COPIA_PC = process.env.COPIA_PC || "https://github.com/quivicino/Trekking/releases/download/dati-osm/trekking.json.gz";
 const GIORNI_COPIA = 3;      // la copia vale se i dati OSM hanno meno di 3 giorni
 const MARGINE_KM = 15;
 const BLOCCO = 0.5;          // lato dei blocchi chiesti a Overpass, in gradi
