@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    # ogni lunedì alle 3:37 (ora UTC): riscarica sentieri, rifugi e fontanelle di tutta la Lombardia
+    # ogni lunedì alle 3:37 (ora UTC): riscarica sentieri, rifugi e fontanelle di Lombardia, Valle d'Aosta e Sardegna
     - cron: "37 3 * * 1"
   workflow_dispatch:         # pulsante "Run workflow": riscarica subito i dati da OpenStreetMap
 
@@ -33,7 +33,7 @@ jobs:
 
       # I dati non stanno nel repository: il lunedì (o col pulsante) si riscaricano da OpenStreetMap,
       # negli altri casi si ricopiano quelli già pubblicati. Se Overpass non risponde restano quelli vecchi.
-      - name: Scarica i sentieri della Lombardia da OpenStreetMap
+      - name: Scarica i sentieri da OpenStreetMap (Lombardia, Valle d'Aosta, Sardegna)
         id: dati
         timeout-minutes: 300   # lo script si ferma da solo dopo 270 minuti e salva quello che ha
         continue-on-error: true   # senza dati, l'app chiede i sentieri direttamente dal telefono
@@ -84,7 +84,7 @@ jobs:
           if os.environ["STATO_JOB"] != "success" or os.environ["STATO_DATI"] != "success" or not stato:
               msg = ("Aggiornamento fallito", "Tocca per vedere cosa è successo su GitHub.", "x", 4)
           elif stato == "nuovi":
-              msg = ("Sentieri aggiornati", f"Riscaricati da OpenStreetMap: {n} sentieri in Lombardia.", "white_check_mark", 3)
+              msg = ("Sentieri aggiornati", f"Riscaricati da OpenStreetMap: {n} sentieri (Lombardia, Valle d'Aosta, Sardegna).", "white_check_mark", 3)
           elif stato == "parziale":
               msg = ("Sentieri aggiornati in parte", f"{n} sentieri: alcune zone non hanno risposto e restano quelle vecchie.", "warning", 3)
           elif stato == "ripiego":

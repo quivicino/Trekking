@@ -15,12 +15,12 @@ Web app per il telefono che mostra i **sentieri** vicino a te, con lo stesso asp
 
 ## Come funziona
 
-- **Dati salvati nel sito per Lombardia e Valle d'Aosta.** Ogni lunedì GitHub esegue `aggiorna_sentieri.js`
-  (workflow `.github/workflows/pubblica.yml`): scarica da Overpass sentieri e punti della Lombardia e della Valle d'Aosta allargate di 15 km,
+- **Dati salvati nel sito per Lombardia, Valle d'Aosta e Sardegna.** Ogni lunedì GitHub esegue `aggiorna_sentieri.js`
+  (workflow `.github/workflows/pubblica.yml`): scarica da Overpass sentieri e punti di Lombardia, Valle d'Aosta e Sardegna allargate di 15 km,
   a blocchi di mezzo grado (35 richieste), unisce i pezzi dei sentieri tagliati tra un blocco e l'altro e li salva nella
   cartella `dati/` del sito, divisi in tessere da 0,1°. Ogni sentiero è salvato una volta sola (nella tessera dove inizia;
   le altre tessere che attraversa dicono dov'è) e la traccia tiene un punto ogni circa 5 metri.
-  In queste due regioni l'app legge da lì; fuori interroga i server pubblici di Overpass (2–25 km intorno a te, di solito 15).
+  In queste regioni l'app legge da lì; fuori interroga i server pubblici di Overpass (2–25 km intorno a te, di solito 15).
 - Come in Qui-Pets i dati **non** stanno nel repository, solo nel sito pubblicato: a ogni altra pubblicazione,
   o se Overpass non risponde, si ricopiano quelli già pubblicati. Per riscaricarli subito: Actions →
   *Pubblica sito e aggiorna sentieri* → *Run workflow*.
@@ -54,8 +54,8 @@ Impostazioni del repository → Pages → Source: **GitHub Actions**. A ogni mod
 - `config.js`: impostazioni iniziali e numero di versione
 - `sw.js`, `manifest.webmanifest`: installazione come app
 - `installa.js`: riquadro «Metti Qui-Trekking sul telefono» (poco dopo l'avvio, solo se aperta nel browser; «Più tardi» lo nasconde per 5 giorni) e voce «Installa l'app» nella pagina Elenco. Android/Chrome: pulsante che apre l'installazione; iPhone: i passaggi di Safari; dentro WhatsApp/Facebook: come aprire la pagina nel browser
-- `aggiorna_sentieri.js`, `.github/workflows/pubblica.yml`: scaricamento settimanale di Lombardia e Valle d'Aosta e pubblicazione
-- `aggiorna_cai.js`: (Lombardia e Valle d'Aosta) percorribilità (con nota e data), tempi e dislivelli dal Catasto sentieri CAI (OSM2CAI) in `dati/cai.json`.
+- `aggiorna_sentieri.js`, `.github/workflows/pubblica.yml`: scaricamento settimanale di Lombardia, Valle d'Aosta e Sardegna e pubblicazione. Se si aggiunge una regione, la prima pubblicazione riscarica subito tutto; i blocchi che Overpass non dà finiscono in `mancanti` nell'indice e lì l'app interroga Overpass
+- `aggiorna_cai.js`: (Lombardia, Valle d'Aosta e Sardegna) percorribilità (con nota e data), tempi e dislivelli dal Catasto sentieri CAI (OSM2CAI) in `dati/cai.json`.
   OSM2CAI accetta 60 richieste al minuto e va interrogato un sentiero alla volta: si riparte dal file pubblicato e si chiedono
   solo i sentieri nuovi o cambiati (al massimo 45 minuti per giro; la prima volta servono due o tre giri per tutti i ~4.000)
 - `dati/`: sentieri e punti, creata da GitHub solo nel sito pubblicato (non sta nel repository)

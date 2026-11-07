@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Qui-Trekking – scarica da OpenStreetMap (Overpass) sentieri, rifugi, bivacchi, fontanelle e sorgenti di tutta
- * la Lombardia e la Valle d'Aosta (più 15 km oltre i confini) e li salva nel sito, divisi in "tessere" da 0,1 gradi.
+ * la Lombardia, la Valle d'Aosta e la Sardegna (più 15 km oltre i confini) e li salva nel sito, divisi in "tessere" da 0,1 gradi.
  * Dentro queste regioni l'app legge da qui e non dipende dai server pubblici di OpenStreetMap, spesso lenti o fuori uso.
  *
  * Lo esegue GitHub (vedi .github/workflows/pubblica.yml): ogni lunedì riscarica tutto, a blocchi di mezzo grado
@@ -24,7 +24,8 @@ const QT = require("./core.js");
 // Regioni salvate nel sito (riquadri che le contengono) e quanto prendere oltre i confini
 const LOMBARDIA = [44.68, 8.50, 46.64, 11.43];
 const VALLE_AOSTA = [45.46, 6.80, 45.99, 7.94];
-const ZONE = [LOMBARDIA, VALLE_AOSTA];
+const SARDEGNA = [38.85, 8.12, 41.32, 9.84];   // con le isole minori (Asinara, La Maddalena, San Pietro)
+const ZONE = [LOMBARDIA, VALLE_AOSTA, SARDEGNA];
 const MARGINE_KM = 15;
 const BLOCCO = 0.5;          // lato dei blocchi chiesti a Overpass, in gradi
 const PASSO = 0.1;           // lato delle tessere del sito, in gradi (circa 11 × 8 km)
@@ -171,6 +172,7 @@ function salva(raccolta, zona) {
     zona: LOMBARDIA,        // per le versioni dell'app che conoscono un solo riquadro
     zone: ZONE,             // dentro questi riquadri l'app usa i dati del sito
     scaricata: zona,
+    mancanti: [],           // blocchi non scaricati e senza dati vecchi: lì l'app chiede a Overpass
     aggiornato: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
     sentieri: nSentieri,
     punti: raccolta.punti.size,
@@ -207,8 +209,16 @@ async function scaricaTutto() {
   }
   if (falliti.length === lista.length) throw new Error("nessun blocco scaricato");
   salva(raccolta, zona);
+  segnaMancanti(falliti);
   if (falliti.length) console.log(`Blocchi mancanti: ${falliti.length} di ${lista.length}`);
   return falliti;
+}
+
+// Scrive nell'indice i blocchi senza dati: lì l'app non usa il sito ma chiede direttamente a Overpass
+function segnaMancanti(blocchi) {
+  const indice = JSON.parse(fs.readFileSync(path.join(CARTELLA, "indice.json"), "utf8"));
+  indice.mancanti = blocchi;
+  scriviIndice(indice);
 }
 
 // Per i blocchi non scaricati rimette le tessere della pubblicazione precedente (se c'è ed è della stessa versione)
@@ -234,6 +244,10 @@ async function riempiBuchi(falliti, sito) {
     }
   }
   indice.tessere = [...tessere].sort();
+  // i blocchi fuori dalla zona scaricata la volta prima (per esempio una regione appena aggiunta) restano senza dati
+  const vecchiaZona = Array.isArray(vecchio.scaricata && vecchio.scaricata[0]) ? vecchio.scaricata : [vecchio.scaricata || []];
+  const coperto = ([s, w, n, e]) => vecchiaZona.some(([zs, zw, zn, ze]) => s >= zs && n <= zn && w >= zw && e <= ze);
+  indice.mancanti = falliti.filter((b) => !coperto(b));
   scriviIndice(indice);
   console.log(`Rimesse ${n} tessere della pubblicazione del ${vecchio.aggiornato} nei blocchi mancanti`);
 }
@@ -294,6 +308,8 @@ async function main() {
       const ore = (Date.now() - Date.parse(indice.aggiornato)) / 3600000;
       if (indice.versioneDati !== VERSIONE_DATI) {
         console.log("I dati pubblicati sono di una versione precedente: li riscarico da Overpass.");
+      } else if (JSON.stringify(indice.zone) !== JSON.stringify(ZONE)) {
+        console.log("Le regioni salvate sono cambiate: riscarico i dati da Overpass.");
       } else if (ore < ORE_VALIDI) {
         console.log(`Dati pubblicati ${ore.toFixed(1)} ore fa: non serve riscaricarli.`);
         await recuperaDalSito(sito);
@@ -329,4 +345,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-else module.exports = { LOMBARDIA, VALLE_AOSTA, ZONE, allarga, blocchi, unisciBlocchi, semplifica, salva, riempiBuchi };
+else module.exports = { LOMBARDIA, VALLE_AOSTA, SARDEGNA, ZONE, allarga, blocchi, unisciBlocchi, semplifica, salva, riempiBuchi };

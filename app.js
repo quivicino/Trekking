@@ -255,8 +255,8 @@
   }
 
   // ---------- Dati salvati nel sito ----------
-  // Ogni lunedì GitHub scarica sentieri e punti di tutta la Lombardia (più 15 km oltre i confini) e li salva nella
-  // cartella "dati" del sito, divisi in tessere. In Lombardia l'app li legge da lì, senza dipendere da Overpass.
+  // Ogni lunedì GitHub scarica sentieri e punti di Lombardia, Valle d'Aosta e Sardegna (più 15 km oltre i confini) e li
+  // salva nella cartella "dati" del sito, divisi in tessere. In queste regioni l'app li legge da lì, senza dipendere da Overpass.
   // Ogni sentiero è salvato una volta sola, nella sua tessera "di casa": le altre tessere che attraversa
   // dicono solo dov'è, e quella tessera si scarica in un secondo momento.
   let indiceSito = null, indiceLetto = 0;
@@ -280,9 +280,12 @@
   async function dalSito(lat, lon, raggio, forza) {
     const ind = await leggiIndice(forza);
     if (!ind || !(ind.zone || ind.zona) || !ind.tessere) return null;
-    // più regioni (Lombardia, Valle d'Aosta…); i dati più vecchi hanno un solo riquadro in "zona"
+    // più regioni (Lombardia, Valle d'Aosta, Sardegna…); i dati più vecchi hanno un solo riquadro in "zona"
     const zone = ind.zone || [ind.zona];
-    if (!zone.some(([zs, zw, zn, ze]) => lat >= zs && lat <= zn && lon >= zw && lon <= ze)) return null;
+    const dentro = ([zs, zw, zn, ze]) => lat >= zs && lat <= zn && lon >= zw && lon <= ze;
+    if (!zone.some(dentro)) return null;
+    // blocchi che GitHub non è riuscito a scaricare (per esempio una regione appena aggiunta): meglio Overpass
+    if ((ind.mancanti || []).some(dentro)) return null;
     const passo = ind.passo || 0.1;
     const esistenti = new Set(ind.tessere);
     const [s, w, n, e] = QT.riquadro(lat, lon, raggio);
@@ -312,7 +315,7 @@
     if (!forza && ultimo && Date.now() - (ultimo.letto || ultimo.quando) < 60 * 60000 && copre(ultimo, lat, lon, raggio)) {
       return { ...ultimo, fonte: ultimo.fonte === "sito" ? "sito" : "memoria" };
     }
-    // 1. In Lombardia: i dati salvati nel sito
+    // 1. Nelle regioni salvate: i dati del sito
     try {
       const sito = await dalSito(lat, lon, raggio, forza);
       if (sito) {
@@ -321,7 +324,7 @@
         return ultimo;
       }
     } catch (e) { console.warn("Dati del sito non disponibili", e); }
-    // 2. Fuori dalla Lombardia (o sito senza dati): i server pubblici di OpenStreetMap
+    // 2. Fuori da queste regioni (o sito senza dati): i server pubblici di OpenStreetMap
     try {
       ultimo = await daOverpass(lat, lon, raggio);
       Memoria.salva("dati", "ultimo", ultimo).catch(() => {});
