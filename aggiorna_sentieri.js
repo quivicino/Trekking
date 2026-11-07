@@ -309,9 +309,21 @@ function scriviEsito(stato) {
 // sulla release dati-osm. Le tracce sono complete, quindi basta unirle come un unico grande blocco.
 async function daCopiaPc() {
   console.log(`Scarico la copia del computer: ${COPIA_PC} …`);
-  const r = await scarica(COPIA_PC, {}, 10 * 60000);
-  const dati = JSON.parse(require("zlib").gunzipSync(Buffer.from(await r.arrayBuffer())).toString("utf8"));
+  const leggi = async (url) => {
+    const r = await scarica(url, {}, 10 * 60000);
+    return JSON.parse(require("zlib").gunzipSync(Buffer.from(await r.arrayBuffer())).toString("utf8"));
+  };
+  const dati = await leggi(COPIA_PC);
   const base = dati.osm3s && dati.osm3s.timestamp_osm_base;
+  // un file troppo grande per Node viene diviso in parti (trekking-2.json.gz, …), elencate in "parti"
+  for (const nome of dati.parti || []) {
+    const url = COPIA_PC.replace(/[^/]+$/, nome);
+    console.log(`  parte ${url} …`);
+    const p = await leggi(url);
+    const pb = p.osm3s && p.osm3s.timestamp_osm_base;
+    if (pb !== base) throw new Error(`la parte ${nome} è di un altro giorno (${pb})`);
+    for (const el of p.elements || []) dati.elements.push(el);
+  }
   const giorni = (Date.now() - Date.parse(base)) / 86400000;
   if (!(giorni < GIORNI_COPIA)) throw new Error(`copia troppo vecchia (dati OSM del ${base})`);
   const n = (dati.elements || []).length;
