@@ -664,6 +664,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cai-stato.cai-parz b { color: #a85a00; }
 .cai-stato.cai-no { border-color: #c62828; background: #fdecea; }
 .cai-stato.cai-no b { color: #c62828; }
+.cai-stato.cai-ver { border-color: #6b7280; background: #f1f3f5; }
+.cai-stato.cai-ver b { color: #4b5563; }
 .avviso-cai { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 800 15px/1 system-ui, sans-serif;
   color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); cursor: pointer; }
 .avviso-cai.cai-no { background: #c62828; }

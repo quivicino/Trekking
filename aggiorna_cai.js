@@ -1,5 +1,5 @@
 /*
- * Qui-Trekking – dati del Catasto sentieri CAI (OSM2CAI, https://osm2cai.cai.it) per Lombardia e Valle d'Aosta.
+ * Qui-Trekking – dati del Catasto sentieri CAI (OSM2CAI, https://osm2cai.cai.it) per Lombardia, Valle d'Aosta e Sardegna.
  * Per ogni sentiero (chiave = numero della relazione OpenStreetMap): percorribilità con nota e data,
  * tempi di percorrenza nei due sensi, salita e discesa. Scrive dati/cai.json, letto dall'app nella scheda.
  *
@@ -18,7 +18,7 @@ const API = "https://osm2cai.cai.it/api";
 // A Friuli Venezia Giulia, B Veneto, C Trentino-Alto Adige, D Lombardia, E Piemonte, F Valle d'Aosta,
 // G Liguria, H Emilia-Romagna, L Toscana, M Marche, N Umbria, O Lazio, P Abruzzo, Q Molise,
 // R Puglia, S Campania, T Basilicata, U Calabria, V Sicilia, Z Sardegna
-const REGIONI = ["D", "F"];       // Lombardia e Valle d'Aosta, come la zona dei sentieri
+const REGIONI = ["D", "F", "Z"];  // Lombardia, Valle d'Aosta e Sardegna, come la zona dei sentieri
 const STATI = [1, 2, 3, 4];       // stato di accatastamento: 4 = validato dal CAI
 const CARTELLA = path.join(__dirname, "dati");
 const FILE = path.join(CARTELLA, "cai.json");
