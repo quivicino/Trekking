@@ -18,7 +18,9 @@ const API = "https://osm2cai.cai.it/api";
 // A Friuli Venezia Giulia, B Veneto, C Trentino-Alto Adige, D Lombardia, E Piemonte, F Valle d'Aosta,
 // G Liguria, H Emilia-Romagna, L Toscana, M Marche, N Umbria, O Lazio, P Abruzzo, Q Molise,
 // R Puglia, S Campania, T Basilicata, U Calabria, V Sicilia, Z Sardegna
-const REGIONI = ["D", "F", "Z"];  // Lombardia, Valle d'Aosta e Sardegna, come la zona dei sentieri
+// Tutta l'Italia, come i sentieri (copia del computer di paolo). La prima volta servono più giri:
+// ogni giro chiede al massimo MINUTI_MAX minuti di sentieri, i mancanti si prendono la volta dopo.
+const REGIONI = ["A", "B", "C", "D", "E", "F", "G", "H", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "Z"];
 const STATI = [1, 2, 3, 4];       // stato di accatastamento: 4 = validato dal CAI
 const CARTELLA = path.join(__dirname, "dati");
 const FILE = path.join(CARTELLA, "cai.json");
