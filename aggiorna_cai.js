@@ -91,8 +91,22 @@ async function main() {
 
   // elenco: id OSM2CAI → data dell'ultima modifica
   const elenco = {};
+  // con tutte le regioni sono 80 richieste: anche queste una al secondo, e se OSM2CAI dice "troppe" (429) si aspetta
   for (const reg of REGIONI) {
-    for (const sda of STATI) Object.assign(elenco, await json(`${API}/v2/hiking-routes/region/${reg}/${sda}`, 120000));
+    for (const sda of STATI) {
+      for (let prova = 1; ; prova++) {
+        const t0 = Date.now();
+        try {
+          Object.assign(elenco, await json(`${API}/v2/hiking-routes/region/${reg}/${sda}`, 120000));
+          await attendi(Math.max(0, PAUSA_MS - (Date.now() - t0)));
+          break;
+        } catch (e) {
+          if (!e.attesa || prova >= 5) throw e;
+          console.log(`  elenco ${reg}/${sda}: troppe richieste, aspetto ${Math.round(e.attesa / 1000)} s`);
+          await attendi(e.attesa);
+        }
+      }
+    }
   }
   const ids = Object.keys(elenco);
   console.log(`OSM2CAI: ${ids.length} sentieri nelle regioni ${REGIONI.join(", ")}`);
