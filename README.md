@@ -11,7 +11,11 @@ Web app per il telefono che mostra i **sentieri** vicino a te, con lo stesso asp
   altimetrico), quota minima e massima, **tempo di percorrenza** (tag `duration` o stima CAI/CAS: 4 km/h in piano,
   300 m/h in salita, 500 m/h in discesa);
 - **rifugi** (`tourism=alpine_hut`), **bivacchi** e ricoveri (`tourism=wilderness_hut`, `amenity=shelter`),
-  **fontanelle** (`amenity=drinking_water`, `water_point`, fontane potabili) e **sorgenti** (`natural=spring`).
+  **fontanelle** (`amenity=drinking_water`, `water_point`, fontane potabili) e **sorgenti** (`natural=spring`);
+- **bar e ristoranti** (`amenity=restaurant|cafe|bar|pub`) e **agriturismi** (`agriturismo=yes` o `guest_house=agritourism`),
+  solo quelli a meno di **300 m** da un sentiero (in Italia sono più di 150.000, quasi tutti in città): il filtro si fa una volta sola
+  quando si preparano i dati (in `osm_italia.py` sul computer, con `around` nella query di Overpass e di nuovo nella creazione delle tessere).
+  Voce «Bar e ristoranti» nel menu, spenta all'inizio; nella scheda di ogni sentiero l'elenco dei locali lungo il percorso con la distanza.
 
 ## Come funziona
 
