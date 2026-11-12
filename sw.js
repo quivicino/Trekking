@@ -1,6 +1,6 @@
 // Qui-Trekking – service worker: rende l'app installabile e apribile offline.
 // Cambia il nome della cache a ogni aggiornamento: così l'iPhone capisce che c'è una versione nuova.
-const CACHE = "trekking-26";
+const CACHE = "trekking-27";
 // Leaflet viene da unpkg: lo si tiene anche lui, se no senza rete la mappa non parte
 const ESTERNI = ["https://unpkg.com/leaflet@1.9.4/dist/leaflet.js", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"];
 // Tessere della mappa salvate con «Salva per l'uso senza rete» (le mette l'app)

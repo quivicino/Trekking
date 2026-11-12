@@ -61,8 +61,18 @@
     R: { nome: "Rifugio", plurale: "Rifugi" },
     B: { nome: "Bivacco", plurale: "Bivacchi e ricoveri" },
     W: { nome: "Fontanella", plurale: "Fontanelle" },
-    S: { nome: "Sorgente", plurale: "Sorgenti" }
+    S: { nome: "Sorgente", plurale: "Sorgenti" },
+    C: { nome: "Bar o ristorante", plurale: "Bar e ristoranti" }
   };
+  // Bar, ristoranti e agriturismi: si tengono solo quelli a meno di RAGGIO_RISTORO metri da un sentiero
+  // (in Italia sono più di 150.000, quasi tutti in città). "y" = che locale è.
+  const RAGGIO_RISTORO = 300;
+  const LOCALI = { r: "Ristorante", b: "Bar", c: "Caffè", p: "Pub", a: "Agriturismo" };
+  const DA_AMENITY = { restaurant: "r", bar: "b", cafe: "c", pub: "p" };
+  function tipoLocale(t) {
+    if (t.agriturismo === "yes" || t.guest_house === "agritourism") return "a";
+    return DA_AMENITY[t.amenity] || null;
+  }
 
   /** Codice del tipo di punto a partire dai tag OSM, oppure null se non interessa. */
   function tipoDaTag(t) {
@@ -72,6 +82,7 @@
     if (t.amenity === "drinking_water" || (t.amenity === "fountain" && t.drinking_water === "yes") ||
         (t.amenity === "water_point" && t.drinking_water !== "no")) return "W";
     if (t.natural === "spring") return "S";
+    if (tipoLocale(t)) return "C";
     return null;
   }
 
@@ -91,7 +102,8 @@
     metti("t", t.phone || t["contact:phone"] || t["contact:mobile"]);
     metti("w", t.website || t["contact:website"] || t.url);
     metti("o", t.operator);
-    metti("p", t.beds || t.capacity);
+    if (k !== "C") metti("p", t.beds || t.capacity);
+    if (k === "C") metti("y", tipoLocale(t));
     const info = [];
     if (k === "R" || k === "B") {
       if (t.fireplace === "yes") info.push("con stufa o camino");
@@ -104,6 +116,11 @@
       if (t.drinking_water === "conditional" || t["drinking_water:legal"] === "no") info.push("potabilità non garantita");
       if (t.seasonal === "yes" || t.seasonal === "summer") info.push("solo in alcuni mesi");
       if (t.intermittent === "yes") info.push("a volte asciutta");
+    }
+    if (k === "C") {
+      if (t.outdoor_seating === "yes") info.push("posti all'aperto");
+      if (t.cuisine === "regional" || t.cuisine === "italian;regional") info.push("cucina regionale");
+      if (t.cuisine === "pizza") info.push("pizzeria");
     }
     if (info.length) p.x = info.join(", ");
     return p;
@@ -295,6 +312,64 @@
       if (d < dmin) { dmin = d; best = p; }
     }
     return { punto: best, distanza: dmin };
+  }
+
+  // ---------- Distanza dalla traccia ----------
+  // Distanza in metri del punto (lat, lon) dal segmento a-b (coordinate piane locali: va bene per poche centinaia di metri)
+  function distanzaSegmento(lat, lon, a, b) {
+    const kx = 111320 * Math.cos(lat * Math.PI / 180), ky = 110540;
+    const ax = (a[1] - lon) * kx, ay = (a[0] - lat) * ky, bx = (b[1] - lon) * kx, by = (b[0] - lat) * ky;
+    const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+    const t = l2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2)) : 0;
+    return { d: Math.hypot(ax + t * dx, ay + t * dy), t };
+  }
+  /** Distanza dalla traccia (lista di linee [[lat, lon], ...]) e metri dall'inizio del punto più vicino ("km"). */
+  function distanzaDaTraccia(lat, lon, linee) {
+    let best = Infinity, km = 0, fatto = 0;
+    for (const l of linee || []) {
+      for (let i = 0; i < l.length; i++) {
+        const b = l[i], a = i ? l[i - 1] : b;
+        const seg = i ? distanza(a[0], a[1], b[0], b[1]) : 0;
+        const r = distanzaSegmento(lat, lon, a, b);
+        if (r.d < best) { best = r.d; km = fatto + r.t * seg; }
+        fatto += seg;
+      }
+    }
+    return { distanza: best, km };
+  }
+  /**
+   * Id dei punti a meno di "metri" da almeno una delle linee. Si indicizzano i punti in una griglia
+   * e si scorrono le linee una volta sola: va bene anche per tutta l'Italia (milioni di segmenti).
+   * punti: [{i, la, lo}], linee: iterabile di [[lat, lon], ...]
+   */
+  function vicinoAiSentieri(punti, linee, metri) {
+    metri = metri || RAGGIO_RISTORO;
+    const CELLA = 0.01;   // circa 1,1 × 0,8 km
+    const griglia = new Map();
+    for (const p of punti) {
+      const c = Math.floor(p.la / CELLA) + ":" + Math.floor(p.lo / CELLA);
+      if (!griglia.has(c)) griglia.set(c, []);
+      griglia.get(c).push(p);
+    }
+    const vicini = new Set();
+    if (!griglia.size) return vicini;
+    const mLat = metri / 110540;
+    for (const l of linee) {
+      for (let i = 0; i < l.length; i++) {
+        const a = l[i ? i - 1 : 0], b = l[i];
+        const mLon = metri / (111320 * Math.cos(b[0] * Math.PI / 180));
+        const i0 = Math.floor((Math.min(a[0], b[0]) - mLat) / CELLA), i1 = Math.floor((Math.max(a[0], b[0]) + mLat) / CELLA);
+        const j0 = Math.floor((Math.min(a[1], b[1]) - mLon) / CELLA), j1 = Math.floor((Math.max(a[1], b[1]) + mLon) / CELLA);
+        for (let ci = i0; ci <= i1; ci++) {
+          for (let cj = j0; cj <= j1; cj++) {
+            const lista = griglia.get(ci + ":" + cj);
+            if (!lista) continue;
+            for (const p of lista) if (!vicini.has(p.i) && distanzaSegmento(p.la, p.lo, a, b).d <= metri) vicini.add(p.i);
+          }
+        }
+      }
+    }
+    return vicini;
   }
 
   // ---------- Guida sul sentiero ----------
@@ -555,10 +630,16 @@
     return [lat - dLat, lon - dLon, lat + dLat, lon + dLon].map((x) => +x.toFixed(5));
   }
   // Sentieri escursionistici (esclusi i grandi itinerari europei, lunghissimi) e punti utili, in un riquadro
+  // Bar, ristoranti e agriturismi solo a meno di RAGGIO_RISTORO metri dalle vie dei sentieri (around).
   function queryOverpass(bbox, timeout) {
     const b = `(${bbox.join(",")})`;
+    const vicino = `${b}(around.vie:${RAGGIO_RISTORO})`;
     return `[out:json][timeout:${timeout || 90}][maxsize:200000000];` +
-      `relation${b}[route=hiking][type=route][network!=iwn];out geom${b};` +
+      `relation${b}[route=hiking][type=route][network!=iwn]->.sentieri;.sentieri out geom${b};` +
+      `way(r.sentieri)->.vie;` +
+      `nwr[amenity~"^(restaurant|cafe|bar|pub)$"]${vicino};out center tags;` +
+      `nwr[agriturismo=yes]${vicino};out center tags;` +
+      `nwr[guest_house=agritourism]${vicino};out center tags;` +
       `(nwr${b}[tourism~"^(alpine_hut|wilderness_hut)$"];` +
       `nwr${b}[amenity=shelter][shelter_type~"^(basic_hut|lean_to|rock_shelter)$"];` +
       `node${b}[amenity=drinking_water];` +
@@ -619,7 +700,7 @@
     }
     return s;
   }
-  const nomeTipo = (d) => TIPI[d.k].nome;
+  const nomeTipo = (d) => (d.k === "C" && LOCALI[d.y]) || TIPI[d.k].nome;
   const titolo = (d) => capitalizza(d.n) || nomeTipo(d);
 
 
@@ -715,7 +796,7 @@
 
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
-    TIPI, tipoDaTag, compatta, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
+    TIPI, RAGGIO_RISTORO, LOCALI, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,

@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
   <div class="app">
@@ -225,7 +225,7 @@
           <ul class="g-lista" id="g-diff"></ul>
           <p>Tocca la linea o il segnavia: il sentiero si evidenzia e compare un fumetto con il segnavia e il nome. Tocca un punto vuoto
             della mappa per chiuderlo. Tocca il fumetto per aprire la <b>scheda del sentiero</b>, una pagina a tutto schermo: difficoltà, lunghezza,
-            dislivello in salita e in discesa, quota minima e massima, tempo di percorrenza, partenza e arrivo. Intanto la mappa
+            dislivello in salita e in discesa, quota minima e massima, tempo di percorrenza, partenza e arrivo, e i <b>bar e ristoranti</b> a meno di 300 metri dal tracciato (con la distanza). Intanto la mappa
             inquadra il <b>sentiero intero</b> e lo evidenzia: chiudendo la scheda (X o <b>Cammina sul sentiero</b>) lo trovi lì.
             Con il sentiero scelto, in alto a sinistra compaiono la tua <b>velocità</b> e una <b>freccia</b>
             (il nord è in alto, come sulla mappa): se sei lontano dal sentiero la freccia punta al suo punto più vicino, che una
@@ -272,7 +272,7 @@
           <h3>I pulsanti</h3>
           <ul class="g-lista">
             <li><span class="g-segno"><span class="g-barra">Cerca un luogo…</span></span><div><b>Cerca</b>: scrivi un paese, una valle o un rifugio per vedere i sentieri lì invece che intorno a te.</div></li>
-            <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: spunta le difficoltà dei sentieri e i tipi di punti che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b> e le <b>sorgenti</b> (che spesso non sono potabili).</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: spunta le difficoltà dei sentieri e i tipi di punti che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b>, le <b>sorgenti</b> (che spesso non sono potabili) e i <b>bar e ristoranti</b> (solo quelli a meno di 300 metri da un sentiero).</div></li>
             <li><span class="g-segno"><span class="g-barra corto">15 km</span></span><div><b>Raggio</b>: quanto lontano cercare, da 2 a 25 km (di solito 15). Con un raggio grande in montagna i sentieri sono tanti e lo scaricamento è più lento.</div></li>
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti. All'avvio l'app riparte dall'ultima zona che guardavi: tocca qui per tornare dove sei.</div></li>
             <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i sentieri e i punti vicini e le impostazioni.</div></li>
@@ -359,9 +359,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=25"></script>
-  <script src="core.js?v=18"></script>
-  <script src="app.js?v=25"></script>
+  <script src="config.js?v=26"></script>
+  <script src="core.js?v=19"></script>
+  <script src="app.js?v=26"></script>
   <script src="installa.js?v=20"></script>
 
   <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com

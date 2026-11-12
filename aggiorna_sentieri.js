@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /*
- * Qui-Trekking – scarica da OpenStreetMap (Overpass) sentieri, rifugi, bivacchi, fontanelle e sorgenti di tutta
+ * Qui-Trekking – scarica da OpenStreetMap (Overpass) sentieri, rifugi, bivacchi, fontanelle, sorgenti e i bar e ristoranti
+ * vicino ai sentieri (entro 300 m) di tutta
  * la Lombardia, la Valle d'Aosta e la Sardegna (più 15 km oltre i confini) e li salva nel sito, divisi in "tessere" da 0,1 gradi.
  * Dentro queste regioni l'app legge da qui e non dipende dai server pubblici di OpenStreetMap, spesso lenti o fuori uso.
  *
@@ -145,12 +146,22 @@ function salva(raccolta, zona, zone = ZONE, datiOsm = null) {
   const tessere = new Map();
   const prendi = (t) => { if (!tessere.has(t)) tessere.set(t, { s: [], r: {}, p: [] }); return tessere.get(t); };
   let nSentieri = 0, puntiPrima = 0, puntiDopo = 0;
+  const sentieri = [];
   for (const [id, r] of raccolta.rel) {
     const s = QT.compattaSentiero({ type: "relation", id, tags: r.tags, members: r.membri });
     if (!s) continue;
     for (const l of s.g) puntiPrima += l.length;
     s.g = s.g.map(semplifica);
     for (const l of s.g) puntiDopo += l.length;
+    sentieri.push(s);
+  }
+  // Bar, ristoranti e agriturismi: solo quelli vicino a un sentiero (osm_italia.py e la query di Overpass
+  // li filtrano già; qui si ricontrolla sulla traccia semplificata, con 10 m di margine)
+  const locali = [...raccolta.punti.values()].filter((p) => p.k === "C");
+  const vicini = QT.vicinoAiSentieri(locali, (function* () { for (const s of sentieri) yield* s.g; })(), QT.RAGGIO_RISTORO + 10);
+  for (const p of locali) if (!vicini.has(p.i)) raccolta.punti.delete(p.i);
+  console.log(`Bar e ristoranti vicino ai sentieri: ${vicini.size} (scartati ${locali.length - vicini.size})`);
+  for (const s of sentieri) {
     const casa = nomeTessera(s.g[0][0][0], s.g[0][0][1]);
     prendi(casa).s.push(s);
     const attraversate = new Set();
