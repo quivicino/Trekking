@@ -143,10 +143,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .gr-freccia { width: 80px; height: 80px; }
 .gr-freccia { transition: transform .4s ease-out; }
 .gr-testi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gr-testi b { font: 700 48px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.gr-testi b { font: 700 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .gr-esci {
-  flex: none; align-self: center; margin-left: 4px; min-height: 64px; padding: 0 22px; border-radius: 999px;
-  border: 3px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 32px/1 var(--font-display);
+  flex: none; align-self: center; margin-left: 4px; min-height: 34px; padding: 0 13px; border-radius: 999px;
+  border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 16px/1 var(--font-display);
 }
 .gr-testi span { font-size: 28px; line-height: 1.2; color: var(--testo); }
 
@@ -345,18 +345,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 2px solid var(--libero); animation: pulsa 2s ease-out infinite;
 }
 @keyframes pulsa { from { transform: scale(1); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
-/* Cono dell'orientamento: parte dal centro del pallino, lungo il doppio di quello di Google Maps */
-.io-box { position: relative; width: 18px; height: 18px; }
+/* Cono dell'orientamento: parte dal centro del pallino, lungo il doppio di quello di Google Maps.
+   Il pallino è il doppio di quello delle altre app Qui (36 px invece di 18). */
+.io-box { position: relative; width: 36px; height: 36px; }
 .io-cono {
-  position: absolute; left: -26px; bottom: 9px; width: 70px; height: 84px;
+  position: absolute; left: -17px; bottom: 18px; width: 70px; height: 84px;
   transform-origin: 50% 100%; pointer-events: none;
   background: radial-gradient(circle at 50% 100%, rgba(47,124,246,.8) 0, rgba(47,124,246,.45) 50%, rgba(47,124,246,.05) 100%);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
 }
 .io-box .io { position: relative; }
 .io {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #2f7cf6; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(47,124,246,.25);
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #2f7cf6; border: 5px solid #fff; box-shadow: 0 0 0 10px rgba(47,124,246,.25);
 }
 
 .leaflet-popup-content { font: 20px/1.35 var(--font-body); margin: 16px 18px; }

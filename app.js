@@ -1448,7 +1448,7 @@
     stato.gps = { lat, lon, acc };
     calcolaMoto(p);
     if (!marcatoreIo) {
-      marcatoreIo = L.marker([lat, lon], { icon: L.divIcon({ className: "", html: '<div class="io-box"><div class="io-cono" hidden></div><div class="io"></div></div>', iconSize: [18, 18] }), zIndexOffset: 3000, interactive: false }).addTo(livelli.io);
+      marcatoreIo = L.marker([lat, lon], { icon: L.divIcon({ className: "", html: '<div class="io-box"><div class="io-cono" hidden></div><div class="io"></div></div>', iconSize: [36, 36] }), zIndexOffset: 3000, interactive: false }).addTo(livelli.io);
       cerchioPrecisione = L.circle([lat, lon], { radius: acc, color: "#2f7cf6", weight: 0, fillOpacity: .12, interactive: false }).addTo(livelli.io);
     } else {
       marcatoreIo.setLatLng([lat, lon]);
