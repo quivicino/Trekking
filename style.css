@@ -143,10 +143,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .gr-freccia { width: 80px; height: 80px; }
 .gr-freccia { transition: transform .4s ease-out; }
 .gr-testi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gr-testi b { font: 700 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.gr-testi b { font: 700 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .gr-esci {
-  flex: none; align-self: center; margin-left: 4px; min-height: 42px; padding: 0 16px; border-radius: 999px;
-  border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 21px/1 var(--font-display);
+  flex: none; align-self: center; margin-left: 4px; min-height: 34px; padding: 0 13px; border-radius: 999px;
+  border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 16px/1 var(--font-display);
 }
 .gr-testi span { font-size: 28px; line-height: 1.2; color: var(--testo); }
 
