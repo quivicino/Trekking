@@ -62,8 +62,20 @@
     B: { nome: "Bivacco", plurale: "Bivacchi e ricoveri" },
     W: { nome: "Fontanella", plurale: "Fontanelle" },
     S: { nome: "Sorgente", plurale: "Sorgenti" },
-    C: { nome: "Bar o ristorante", plurale: "Bar e ristoranti" }
+    C: { nome: "Bar o ristorante", plurale: "Bar e ristoranti" },
+    F: { nome: "Impianto a fune", plurale: "Funivie e seggiovie" }
   };
+  // Impianti a fune (funivie, cabinovie, seggiovie, funicolari): sono linee, salvate come un punto alla
+  // stazione a valle (il primo punto della via: su OSM gli impianti si disegnano dal basso verso l'alto)
+  // con la traccia in "tr" (non "g", che nell'app vuol dire sentiero). Sciovie e skilift no: servono solo a chi scia.
+  const IMPIANTI = { f: "Funivia", g: "Cabinovia", m: "Impianto misto (seggiovia e cabinovia)", s: "Seggiovia", u: "Funicolare" };
+  const DA_AERIALWAY = { cable_car: "f", gondola: "g", mixed_lift: "m", chair_lift: "s" };
+  function tipoImpianto(t) {
+    // in progetto, in costruzione o dismessi: no
+    if (t.disused === "yes" || t.abandoned === "yes" || t.construction || t.proposed || /\bprogett/i.test(t.name || "")) return null;
+    if (t.railway === "funicular") return "u";
+    return DA_AERIALWAY[t.aerialway] || null;
+  }
   // Bar, ristoranti e agriturismi: si tengono solo quelli a meno di RAGGIO_RISTORO metri da un sentiero
   // (in Italia sono più di 150.000, quasi tutti in città). "y" = che locale è.
   const RAGGIO_RISTORO = 300;
@@ -83,6 +95,7 @@
         (t.amenity === "water_point" && t.drinking_water !== "no")) return "W";
     if (t.natural === "spring") return "S";
     if (tipoLocale(t)) return "C";
+    if (tipoImpianto(t)) return "F";
     return null;
   }
 
@@ -91,10 +104,17 @@
     const t = el.tags || {};
     const k = tipoDaTag(t);
     if (!k) return null;
-    const la = el.lat ?? (el.center && el.center.lat);
-    const lo = el.lon ?? (el.center && el.center.lon);
+    let g = null;
+    if (k === "F") {
+      // solo vie con la traccia (out geom): punto alla stazione a valle
+      g = (el.geometry || []).filter(Boolean).map((x) => [+x.lat.toFixed(5), +x.lon.toFixed(5)]);
+      if (el.type !== "way" || g.length < 2) return null;
+    }
+    const la = g ? g[0][0] : el.lat ?? (el.center && el.center.lat);
+    const lo = g ? g[0][1] : el.lon ?? (el.center && el.center.lon);
     if (la == null || lo == null) return null;
     const p = { i: el.type[0] + el.id, k, la: +la.toFixed(6), lo: +lo.toFixed(6) };
+    if (g) { p.tr = g; p.l = Math.round(lunghezzaLinea(g)); }
     const metti = (chiave, v) => { v = String(v ?? "").trim(); if (v) p[chiave] = v; };
     metti("n", t.name || t["name:it"]);
     metti("q", parseFloat(String(t.ele || "").replace(",", ".")) ? Math.round(parseFloat(String(t.ele).replace(",", "."))) : "");
@@ -102,8 +122,14 @@
     metti("t", t.phone || t["contact:phone"] || t["contact:mobile"]);
     metti("w", t.website || t["contact:website"] || t.url);
     metti("o", t.operator);
-    if (k !== "C") metti("p", t.beds || t.capacity);
+    if (k !== "C" && k !== "F") metti("p", t.beds || t.capacity);
     if (k === "C") metti("y", tipoLocale(t));
+    if (k === "F") {
+      metti("y", tipoImpianto(t));
+      metti("d", t["aerialway:duration"] || t.duration);
+      metti("c", t["aerialway:occupancy"] || t.occupancy);
+      metti("v", t["aerialway:capacity"]);
+    }
     const info = [];
     if (k === "R" || k === "B") {
       if (t.fireplace === "yes") info.push("con stufa o camino");
@@ -121,6 +147,12 @@
       if (t.outdoor_seating === "yes") info.push("posti all'aperto");
       if (t.cuisine === "regional" || t.cuisine === "italian;regional") info.push("cucina regionale");
       if (t.cuisine === "pizza") info.push("pizzeria");
+    }
+    if (k === "F") {
+      if (t["aerialway:bubble"] === "yes") info.push("con cupola paravento");
+      if (t["aerialway:heating"] === "yes") info.push("sedili riscaldati");
+      if (t["aerialway:bicycle"] === "yes" || t.bicycle === "yes") info.push("si possono portare le bici");
+      if (t.dog === "yes") info.push("cani ammessi");
     }
     if (info.length) p.x = info.join(", ");
     return p;
@@ -640,6 +672,7 @@
       `nwr[amenity~"^(restaurant|cafe|bar|pub)$"]${vicino};out center tags;` +
       `nwr[agriturismo=yes]${vicino};out center tags;` +
       `nwr[guest_house=agritourism]${vicino};out center tags;` +
+      `(way${b}[aerialway~"^(cable_car|gondola|mixed_lift|chair_lift)$"];way${b}[railway=funicular];);out tags geom;` +
       `(nwr${b}[tourism~"^(alpine_hut|wilderness_hut)$"];` +
       `nwr${b}[amenity=shelter][shelter_type~"^(basic_hut|lean_to|rock_shelter)$"];` +
       `node${b}[amenity=drinking_water];` +
@@ -700,7 +733,16 @@
     }
     return s;
   }
-  const nomeTipo = (d) => (d.k === "C" && LOCALI[d.y]) || TIPI[d.k].nome;
+  const nomeTipo = (d) => (d.k === "C" && LOCALI[d.y]) || (d.k === "F" && IMPIANTI[d.y]) || TIPI[d.k].nome;
+  /** Durata della corsa di un impianto (aerialway:duration: minuti, "mm:ss" o "hh:mm:ss") in testo. */
+  function durataCorsa(v) {
+    v = String(v || "").trim();
+    let m = v.match(/^(\d+(?:[.,]\d+)?)$/);
+    if (m) return Math.round(parseFloat(m[1].replace(",", "."))) + " min";
+    m = v.match(/^(?:(\d+):)?(\d+):(\d\d)$/);
+    if (m) { const min = (+m[1] || 0) * 60 + +m[2] + (+m[3] >= 30 ? 1 : 0); return (min || 1) + " min"; }
+    return v;
+  }
   const titolo = (d) => capitalizza(d.n) || nomeTipo(d);
 
 
@@ -796,7 +838,7 @@
 
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
-    TIPI, RAGGIO_RISTORO, LOCALI, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
+    TIPI, RAGGIO_RISTORO, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,

@@ -125,7 +125,8 @@
   const GOCCIA = svg('<path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/>', 15);
   const SORGENTE = svg('<path d="M3 15c2 0 2-1.6 4.5-1.6S9.5 15 12 15s2.5-1.6 4.5-1.6S19 15 21 15M3 19.5c2 0 2-1.6 4.5-1.6s2 1.6 4.5 1.6 2.5-1.6 4.5-1.6 2.5 1.6 4.5 1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 2.5c-1.6 2.4-3.2 4.3-3.2 6.3a3.2 3.2 0 0 0 6.4 0c0-2-1.6-3.9-3.2-6.3Z" fill="currentColor"/>', 16);
   const POSATE = svg('<path d="M7 2.5v6.2M4.6 2.5v5.3a2.4 2.4 0 0 0 4.8 0V2.5M7 10.2V21.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M17.2 2.5c-2.2.9-3.4 3.6-3.4 6.8 0 1.9.9 3 2.4 3.3v8.9h2V2.5Z" fill="currentColor"/>', 16);
-  const SIMBOLO = { R: RIFUGIO, B: BIVACCO, W: GOCCIA, S: SORGENTE, C: POSATE };
+  const CABINA = svg('<path d="M2.5 4.5 21.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 3.3V8" stroke="currentColor" stroke-width="1.8"/><rect x="5" y="8" width="14" height="13" rx="3" fill="currentColor"/><rect x="7.2" y="10.3" width="4.2" height="4.2" rx=".8" fill="rgba(0,0,0,.35)"/><rect x="12.6" y="10.3" width="4.2" height="4.2" rx=".8" fill="rgba(0,0,0,.35)"/>', 16);
+  const SIMBOLO = { R: RIFUGIO, B: BIVACCO, W: GOCCIA, S: SORGENTE, C: POSATE, F: CABINA };
   const icona = (cls, html) => L.divIcon({ className: "", html: `<div class="mk ${cls}">${html ?? ""}</div>`, iconSize: null });
   const classiApertura = (d) => !d.apertura ? "" : d.apertura.aperto ? " aperto" : " chiuso";
   const classiMarker = (d) => `tipo-${d.k}${classiApertura(d)}`;
@@ -521,16 +522,24 @@
       if (!d.apertura) righe.push('<p class="fonte">Orari scritti in un modo che l\'app non sa interpretare: leggili qui sopra.</p>');
     }
     if (d.k === "R") righe.push('<p class="fonte">Per mangiare o dormire telefona prima: gli orari cambiano con la stagione.</p>');
+    if (d.k === "F") {
+      const num = [[QT.formattaKm(d.l || 0), "lunghezza"]];
+      if (d.d) num.push([QT.durataCorsa(d.d), "durata della corsa"]);
+      if (d.c) num.push([esc(d.c), d.y === "s" || d.y === "m" ? "posti per seggiola" : "posti per cabina"]);
+      if (d.v) num.push([esc(d.v), "persone all'ora"]);
+      righe.push(`<div class="pop-num">${num.map(([b, t]) => `<div><b>${b}</b><span>${t}</span></div>`).join("")}</div>`);
+      righe.push('<p class="fonte">Molti impianti d\'estate funzionano solo in alcuni mesi o nei fine settimana: controlla gli orari sul sito del gestore prima di partire.</p>');
+    }
     if (d.k === "C") righe.push('<p class="fonte">Orari, telefono e sito vengono da OpenStreetMap e possono non essere aggiornati: nei giorni di festa e fuori stagione telefona prima.</p>');
     if (d.k === "S" && !/potabile/.test(d.x || "")) righe.push('<p class="avviso">Non è indicato se l\'acqua è potabile.</p>');
     const tel = telefoni(d.t);
     if (tel.length) righe.push(`<p>Tel. ${tel.map((n) => `<a href="tel:${attr(n.replace(/[^\d+]/g, ""))}">${esc(n)}</a>`).join(" · ")}</p>`);
     if (d.w) righe.push(`<p><a href="${attr(sitoWeb(d.w))}" target="_blank" rel="noopener">Sito web</a></p>`);
-    righe.push(`<p>${QT.formattaDistanza(d.distanza)} in linea d'aria</p>`);
+    righe.push(`<p>${d.k === "F" ? "Stazione a valle a " : ""}${QT.formattaDistanza(d.distanza)} in linea d'aria</p>`);
     voce.push(distanzaParlata(d.distanza) + " in linea d'aria.");
     righe.push(`<p class="fonte">Fonte: OpenStreetMap · <a href="${attr(linkOsm(d))}" target="_blank" rel="noopener">Vedi su OpenStreetMap</a></p>`);
     if (d.k === "W" || d.k === "S") righe.push(`<div class="pop-foto" data-id="${attr(d.i)}"></div>`);
-    const pulsanti = [`<a class="pop-vai" href="${linkNavigazione(d.la, d.lo)}" target="_blank" rel="noopener">Portami qui</a>`];
+    const pulsanti = [`<a class="pop-vai" href="${linkNavigazione(d.la, d.lo)}" target="_blank" rel="noopener">${d.k === "F" ? "Portami alla partenza" : "Portami qui"}</a>`];
     if (tel.length) pulsanti.push(`<a class="pop-vai pop-chiama" href="tel:${attr(tel[0].replace(/[^\d+]/g, ""))}">Chiama</a>`);
     pulsanti.push(BOTTONE_MAPPA);
     return `<div class="pop" data-voce="${attr(voce.join(" "))}"><h3>${esc(tit)}</h3>${righe.join("")}
@@ -1169,7 +1178,7 @@
 
   // ---------- Rendering ----------
   // Ordine sulla mappa: rifugi sopra, poi bivacchi, poi l'acqua; gli aperti sopra i chiusi
-  const PESO = { R: 900, B: 700, W: 500, C: 400, S: 300 };
+  const PESO = { R: 900, B: 700, W: 500, F: 450, C: 400, S: 300 };
 
   function render() {
     livelli.raggio.clearLayers();
@@ -1230,6 +1239,7 @@
 
     const daMostrare = stato.viciniP.slice().sort((a, b) => a.distanza - b.distanza).slice(0, cfg.maxSegnaposto || 800);
     for (const d of daMostrare) {
+      if (d.tr) disegnaImpianto(d);
       const z = (PESO[d.k] || 0) + (d.apertura && !d.apertura.aperto ? -100 : 0);
       const m = L.marker([d.la, d.lo], { icon: icona(classiMarker(d), SIMBOLO[d.k]), title: QT.titolo(d), zIndexOffset: z })
         .on("click", () => mostra(d)).addTo(livelli.punti);
@@ -1321,12 +1331,25 @@
   }
 
   // Punto: la mappa va sul punto e si apre la sua scheda
+  // Impianto a fune: linea scura sottile con le due stazioni
+  function disegnaImpianto(d) {
+    const colore = getComputedStyle(document.documentElement).getPropertyValue("--t-F").trim() || "#34424f";
+    L.polyline(d.tr, { renderer: tela, color: "#ffffff", weight: 6, opacity: .8, interactive: false }).addTo(livelli.punti);
+    L.polyline(d.tr, { renderer: tela, color: colore, weight: 3, opacity: 1, bubblingMouseEvents: false })
+      .on("click", () => mostra(d)).addTo(livelli.punti);
+    for (const p of [d.tr[0], d.tr[d.tr.length - 1]]) {
+      L.circleMarker(p, { renderer: tela, radius: 4, color: "#ffffff", weight: 2, fillColor: colore, fillOpacity: 1, interactive: false }).addTo(livelli.punti);
+    }
+  }
+
   function mostra(d) {
     if (!d) return;
     stato.seguiGps = false;
     scegliSentiero(null);
-    mappa.setView([d.la, d.lo], Math.max(mappa.getZoom(), 15));
+    if (d.tr) mappa.fitBounds(L.latLngBounds(d.tr), { padding: [40, 40], maxZoom: 16, animate: false });
+    else mappa.setView([d.la, d.lo], Math.max(mappa.getZoom(), 15));
     if (!markerPerId.has(d.i)) {
+      if (d.tr) disegnaImpianto(d);
       // fuori dai tipi scelti: segnaposto temporaneo
       const m = L.marker([d.la, d.lo], { icon: icona(classiMarker(d), SIMBOLO[d.k]), zIndexOffset: 2000 })
         .on("click", () => mostra(d)).addTo(livelli.punti);
@@ -1570,7 +1593,7 @@
   });
 
   // Cosa mostrare: caselle per le difficoltà dei sentieri e per i tipi di punti; la mappa cambia subito
-  const BREVE = { R: "Rifugi", B: "Bivacchi", W: "Fontanelle", S: "Sorgenti", C: "Bar e ristoranti" };
+  const BREVE = { R: "Rifugi", B: "Bivacchi", W: "Fontanelle", S: "Sorgenti", C: "Bar e ristoranti", F: "Funivie" };
   $("cat-sentieri").innerHTML = QT.ORDINE_DIFF.map((d) =>
     `<label class="cat-voce"><input type="checkbox" value="D${d}"${stato.categorie.has("D" + d) ? " checked" : ""}>` +
     `${pastiglia(d)}<span>${esc(QT.DIFFICOLTA[d].nome)}</span></label>`).join("");
@@ -1659,7 +1682,8 @@
       B: ": bivacco o ricovero sempre aperto, senza gestore: riparo d'emergenza.",
       W: ": fontanella di acqua potabile.",
       S: ": sorgente naturale. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",
-      C: ": bar, ristorante, pub o agriturismo a meno di 300 metri da un sentiero. Si vedono scegliendo “Bar e ristoranti” nel menu; nella scheda di ogni sentiero c'è l'elenco di quelli lungo il percorso."
+      C: ": bar, ristorante, pub o agriturismo a meno di 300 metri da un sentiero. Si vedono scegliendo “Bar e ristoranti” nel menu; nella scheda di ogni sentiero c'è l'elenco di quelli lungo il percorso.",
+      F: ": funivia, cabinovia, seggiovia o funicolare. Sulla mappa è una linea scura dalla stazione a valle (dove sta il simbolo) a quella a monte. Si vedono scegliendo “Funivie e seggiovie” nel menu."
     }[k] || "."}</div></li>`).join("");
 
   let tornaA = null;
