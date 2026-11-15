@@ -15,7 +15,10 @@ Web app per il telefono che mostra i **sentieri** vicino a te, con lo stesso asp
 - **bar e ristoranti** (`amenity=restaurant|cafe|bar|pub`) e **agriturismi** (`agriturismo=yes` o `guest_house=agritourism`),
   solo quelli a meno di **300 m** da un sentiero (in Italia sono più di 150.000, quasi tutti in città): il filtro si fa una volta sola
   quando si preparano i dati (in `osm_italia.py` sul computer, con `around` nella query di Overpass e di nuovo nella creazione delle tessere).
-  Voce «Bar e ristoranti» nel menu, spenta all'inizio; nella scheda di ogni sentiero l'elenco dei locali lungo il percorso con la distanza.
+  Voce «Bar e ristoranti» nel menu, spenta all'inizio; nella scheda di ogni sentiero l'elenco dei locali lungo il percorso con la distanza;
+- **funivie, cabinovie, seggiovie e impianti misti** (`aerialway=cable_car|gondola|chair_lift|mixed_lift`) e **funicolari** (`railway=funicular`),
+  senza sciovie e skilift: linea sulla mappa e scheda con tipo, lunghezza, durata della corsa, posti, orari e sito. Sono salvati come un punto
+  (tipo `F`) alla stazione a valle, con la traccia in `tr`. Voce «Funivie e seggiovie» nel menu, spenta all'inizio.
 
 ## Come funziona
 

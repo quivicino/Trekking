@@ -20,7 +20,7 @@
   --su-colore: #ffffff;
   --barra: #2d5a27;
   /* colori dei tipi di punto */
-  --t-R: #b5442c; --t-B: #7a5a3a; --t-W: #1f86d0; --t-S: #10a3a3; --t-C: #c2711a;
+  --t-R: #b5442c; --t-B: #7a5a3a; --t-W: #1f86d0; --t-S: #10a3a3; --t-C: #c2711a; --t-F: #34424f;
   /* difficoltà CAI dei sentieri */
   --d-T: #2fa84f; --d-E: #e0a000; --d-EE: #e2311d; --d-EEA: #1b1b1b; --d-EAI: #7b3fc4; --d-ND: #8a8f99;
   color-scheme: light;
@@ -462,6 +462,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .mk.tipo-W { --mk-sfondo: var(--t-W); border-radius: 50%; width: 26px; height: 26px; }
 .mk.tipo-S { --mk-sfondo: var(--t-S); border-radius: 50%; width: 26px; height: 26px; }
 .mk.tipo-C { --mk-sfondo: var(--t-C); border-radius: 50%; width: 26px; height: 26px; }
+.mk.tipo-F { --mk-sfondo: var(--t-F); }
 .mk svg { display: block; }
 .mk.aperto::after, .mk.chiuso::after {
   content: ""; position: absolute; top: -5px; right: -5px;

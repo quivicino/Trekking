@@ -3,7 +3,7 @@
  */
 window.QT_CONFIG = {
   // Versione dell'app, mostrata in fondo alla pagina Elenco. Aumentala a ogni aggiornamento.
-  versione: "26",
+  versione: "27",
 
   // Raggio di ricerca iniziale in metri (modificabile anche dall'app)
   raggioMetri: 15000,
@@ -12,7 +12,7 @@ window.QT_CONFIG = {
   ricaricaDopoMetri: 500,
 
   // Cosa mostrare all'inizio: sentieri per difficoltà (DT turistici, DE escursionistici, DEE per esperti,
-  // DEEA attrezzati, DEAI su neve, DND difficoltà non indicata) e punti (R rifugi, B bivacchi, W fontanelle, S sorgenti, C bar e ristoranti vicino ai sentieri)
+  // DEEA attrezzati, DEAI su neve, DND difficoltà non indicata) e punti (R rifugi, B bivacchi, W fontanelle, S sorgenti, C bar e ristoranti vicino ai sentieri, F funivie e seggiovie)
   categorie: ["DT", "DE", "DEE", "DEEA", "DEAI", "DND", "R", "B"],
 
   // Massimo di segnaposto sulla mappa (i più vicini): oltre, la mappa diventa lenta sul telefono
