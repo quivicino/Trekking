@@ -1694,8 +1694,8 @@
     `<li><span class="g-segno"><span class="mk tipo-${k}">${SIMBOLO[k]}</span></span><div><b>${esc(t.nome)}</b>${{
       R: ": rifugio custodito, dove mangiare e dormire nella stagione di apertura.",
       B: ": bivacco o ricovero sempre aperto, senza gestore: riparo d'emergenza.",
-      W: ": fontanella di acqua potabile.",
-      S: ": sorgente naturale. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",
+      W: ": fontanella di acqua potabile, a meno di 300 metri da un sentiero.",
+      S: ": sorgente naturale a meno di 300 metri da un sentiero. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",
       C: ": bar, ristorante, pub o agriturismo a meno di 300 metri da un sentiero. Si vedono scegliendo “Bar e ristoranti” nel menu; nella scheda di ogni sentiero c'è l'elenco di quelli lungo il percorso.",
       F: ": funivia, cabinovia, seggiovia o funicolare. Sulla mappa è una linea scura dalla stazione a valle (dove sta il simbolo) a quella a monte. Si vedono scegliendo “Funivie e seggiovie” nel menu."
     }[k] || "."}</div></li>`).join("");

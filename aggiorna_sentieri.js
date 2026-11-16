@@ -155,12 +155,12 @@ function salva(raccolta, zona, zone = ZONE, datiOsm = null) {
     for (const l of s.g) puntiDopo += l.length;
     sentieri.push(s);
   }
-  // Bar, ristoranti e agriturismi: solo quelli vicino a un sentiero (osm_italia.py e la query di Overpass
-  // li filtrano già; qui si ricontrolla sulla traccia semplificata, con 10 m di margine)
-  const locali = [...raccolta.punti.values()].filter((p) => p.k === "C");
+  // Bar, ristoranti, agriturismi, fontanelle e sorgenti: solo quelli vicino a un sentiero (osm_italia.py e la
+  // query di Overpass li filtrano già; qui si ricontrolla sulla traccia semplificata, con 10 m di margine)
+  const locali = [...raccolta.punti.values()].filter((p) => QT.SOLO_VICINO.has(p.k));
   const vicini = QT.vicinoAiSentieri(locali, (function* () { for (const s of sentieri) yield* s.g; })(), QT.RAGGIO_RISTORO + 10);
   for (const p of locali) if (!vicini.has(p.i)) raccolta.punti.delete(p.i);
-  console.log(`Bar e ristoranti vicino ai sentieri: ${vicini.size} (scartati ${locali.length - vicini.size})`);
+  console.log(`Bar, ristoranti, fontanelle e sorgenti vicino ai sentieri: ${vicini.size} (scartati ${locali.length - vicini.size})`);
   for (const s of sentieri) {
     const casa = nomeTessera(s.g[0][0][0], s.g[0][0][1]);
     prendi(casa).s.push(s);

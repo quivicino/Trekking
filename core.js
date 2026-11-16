@@ -79,6 +79,8 @@
   // Bar, ristoranti e agriturismi: si tengono solo quelli a meno di RAGGIO_RISTORO metri da un sentiero
   // (in Italia sono più di 150.000, quasi tutti in città). "y" = che locale è.
   const RAGGIO_RISTORO = 300;
+  // Tipi di punto tenuti solo vicino ai sentieri (entro RAGGIO_RISTORO): bar e ristoranti, fontanelle, sorgenti
+  const SOLO_VICINO = new Set(["C", "W", "S"]);
   const LOCALI = { r: "Ristorante", b: "Bar", c: "Caffè", p: "Pub", a: "Agriturismo" };
   const DA_AMENITY = { restaurant: "r", bar: "b", cafe: "c", pub: "p" };
   function tipoLocale(t) {
@@ -683,7 +685,7 @@
     return [lat - dLat, lon - dLon, lat + dLat, lon + dLon].map((x) => +x.toFixed(5));
   }
   // Sentieri escursionistici (esclusi i grandi itinerari europei, lunghissimi) e punti utili, in un riquadro
-  // Bar, ristoranti e agriturismi solo a meno di RAGGIO_RISTORO metri dalle vie dei sentieri (around).
+  // Bar, ristoranti, agriturismi, fontanelle e sorgenti solo a meno di RAGGIO_RISTORO metri dalle vie dei sentieri (around).
   function queryOverpass(bbox, timeout) {
     const b = `(${bbox.join(",")})`;
     const vicino = `${b}(around.vie:${RAGGIO_RISTORO})`;
@@ -696,10 +698,11 @@
       `(way${b}[aerialway~"^(cable_car|gondola|mixed_lift|chair_lift)$"];way${b}[railway=funicular];);out tags geom;` +
       `(nwr${b}[tourism~"^(alpine_hut|wilderness_hut)$"];` +
       `nwr${b}[amenity=shelter][shelter_type~"^(basic_hut|lean_to|rock_shelter)$"];` +
-      `node${b}[amenity=drinking_water];` +
-      `node${b}[amenity=water_point];` +
-      `node${b}[amenity=fountain][drinking_water=yes];` +
-      `node${b}[natural=spring];` +
+      `);out center tags;` +
+      `(node[amenity=drinking_water]${vicino};` +
+      `node[amenity=water_point]${vicino};` +
+      `node[amenity=fountain][drinking_water=yes]${vicino};` +
+      `node[natural=spring]${vicino};` +
       `);out center tags;`;
   }
 
@@ -859,7 +862,7 @@
 
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
-    TIPI, RAGGIO_RISTORO, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
+    TIPI, RAGGIO_RISTORO, SOLO_VICINO, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, caiCoerente, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,
