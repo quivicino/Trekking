@@ -66,6 +66,8 @@ function riduci(id, agg, p) {
   v.ar = minuti(p.duration_backward);
   v.su = metri(p.ascent);
   v.giu = metri(p.descent);
+  // lunghezza della traccia del catasto: l'app non usa tempi e dislivelli se è molto diversa da quella di OSM
+  if (isFinite(+p.distance) && +p.distance > 0) v.km = Math.round(+p.distance * 10) / 10;
   if (+p.sda === 4) v.val = 1;
   for (const k of Object.keys(v)) if (v[k] === undefined) delete v[k];
   return v;

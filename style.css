@@ -143,12 +143,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .gr-freccia { width: 80px; height: 80px; }
 .gr-freccia { transition: transform .4s ease-out; }
 .gr-testi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gr-testi b { font: 700 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.gr-testi b { font: 700 26px/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .gr-esci {
   flex: none; align-self: center; margin-left: 4px; min-height: 34px; padding: 0 13px; border-radius: 999px;
   border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 16px/1 var(--font-display);
 }
-.gr-testi span { font-size: 28px; line-height: 1.2; color: var(--testo); }
+.gr-testi span { font-size: 26px; line-height: 1.2; color: var(--testo); }
 
 .fab-col {
   position: absolute; right: 16px; top: 16px; z-index: 900;
@@ -499,6 +499,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .icona-tipo .mk.tipo-W, .icona-tipo .mk.tipo-S, .icona-tipo .mk.tipo-C { width: 32px; height: 32px; }
 .voce { grid-template-columns: 48px 1fr auto; }
 .voce .icona-tipo .segnavia { width: 44px; height: auto; border-radius: 3px; }
+.voce-meta .voce-km { font-weight: 700; color: var(--testo); }
 .voce-meta .diff { height: 18px; min-width: 26px; font-size: 12.5px; padding: 0 5px; }
 .tag.aperto { color: var(--libero); }
 .tag.chiuso { color: var(--pieno); }

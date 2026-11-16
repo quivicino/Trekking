@@ -186,6 +186,17 @@
   const daForestas = (s) => !!(s && s.i && s.i[0] === "f");
   const datoCai = (s) => (daForestas(s) ? s.x || null
     : s && s.i && s.i[0] === "r" ? cai[s.i.slice(1)] || (salvati.has(s.i) && salvati.get(s.i).cai) || null : null);
+  // Dato CAI senza tempi e dislivelli se non tornano con il sentiero (traccia incompleta sul catasto): resta la percorribilità
+  function caiUsabile(s, q) {
+    const c = datoCai(s);
+    if (!c || daForestas(s)) return c;
+    const su = s.su != null ? s.su : q ? q.su : null;
+    const giu = s.su != null ? s.giu : q ? q.giu : null;
+    if (QT.caiCoerente(c, s.l, su, giu)) return c;
+    const pulito = { ...c, incoerente: 1 };
+    delete pulito.af; delete pulito.ar; delete pulito.su; delete pulito.giu;
+    return pulito;
+  }
   const PERCORRIBILITA = { ok: "Percorribile", parz: "Percorribile in parte", no: "Non percorribile", ver: "Da verificare" };
   const SCHEDA_FORESTAS = "https://www.sardegnasentieri.it";
   const avvisoCai = (s) => { const c = datoCai(s); return c && (c.s === "no" || c.s === "parz") ? c.s : null; };
@@ -555,7 +566,7 @@
   // Sentiero ritagliato sulla zona ("parz"): senza i tag di OpenStreetMap, lunghezza, dislivello e tempo
   // si possono calcolare solo per il tratto in zona, e lo si dice.
   function numeriSentiero(s, q) {
-    const c = datoCai(s);
+    const c = caiUsabile(s, q);
     const daCai = s.su == null && !!c && c.su != null;
     const daTag = s.su != null || daCai;
     const su = s.su != null ? s.su : daCai ? c.su : q && q.su;
@@ -611,6 +622,9 @@
         : PERCORRIBILITA[c.s] + " secondo il CAI." + (c.n ? " " + c.n : ""));
     }
     righe.push(`<div class="pop-num" data-num="${attr(s.i)}">${numeriSentiero(s, q)}</div>`);
+    if (c && c.incoerente == null && caiUsabile(s, q).incoerente) {
+      righe.push('<p class="fonte">I tempi del Catasto CAI per questo sentiero non tornano con la sua lunghezza (sul catasto c\'è forse solo un pezzo della traccia): l\'app mostra la sua stima.</p>');
+    }
     righe.push(`<div class="pop-profilo" data-prof="${attr(s.i)}">${profiloSvg(q)}</div>`);
     righe.push(`<div class="pop-ristoro" data-ristoro="${attr(s.i)}"></div>`);
     if (s.o) righe.push(`<p>Gestito da ${esc(s.o)}</p>`);
@@ -621,7 +635,7 @@
       righe.push(`<p class="fonte">Fonte: <a href="${attr((c && c.u) || SCHEDA_FORESTAS)}" target="_blank" rel="noopener">Sardegna Sentieri</a>, ` +
         `© Agenzia Forestas, licenza <a href="${SCHEDA_FORESTAS}/pagina-base/note-legali" target="_blank" rel="noopener">CC BY-NC-SA</a></p>`);
     } else {
-      righe.push(`<p class="fonte">Fonte: <a href="https://www.openstreetmap.org/relation/${attr(s.i.slice(1))}" target="_blank" rel="noopener">OpenStreetMap</a>` + (s.su == null && !(c && c.su != null) ? "; quote: Copernicus DEM (Open-Meteo)" : "") +
+      righe.push(`<p class="fonte">Fonte: <a href="https://www.openstreetmap.org/relation/${attr(s.i.slice(1))}" target="_blank" rel="noopener">OpenStreetMap</a>` + (s.su == null && !(caiUsabile(s, q) || {}).su ? "; quote: Copernicus DEM (Open-Meteo)" : "") +
         (c ? `; percorribilità e tempi: <a href="https://osm2cai.cai.it/hiking-route/id/${attr(c.id)}" target="_blank" rel="noopener">Catasto sentieri CAI</a>` : "") + "</p>");
     }
     const a = attacco(s);
@@ -1266,10 +1280,10 @@
     const li = document.createElement("li");
     li.className = "voce";
     li.tabIndex = 0;
-    const meta = [pastiglia(s.d), `<span>${QT.formattaKm(s.l)}</span>`];
+    const meta = [pastiglia(s.d), `<span class="voce-km">${QT.formattaKm(s.l)}</span>`];
     const av = avvisoCai(s);
     if (av) meta.unshift(`<span class="tag cai-${av}">⚠ ${PERCORRIBILITA[av]}</span>`);
-    const c = datoCai(s), su = s.su != null ? s.su : c && c.su;
+    const c = caiUsabile(s, quoteCalcolate.get(s.i)), su = s.su != null ? s.su : c && c.su;
     if (su != null) meta.push(`<span>↗ ${su} m</span>`);
     const sotto = QT.sottotitoloSentiero(s);
     if (sotto && sotto !== QT.titoloSentiero(s)) meta.push(`<span>${esc(sotto)}</span>`);
@@ -1680,8 +1694,8 @@
     `<li><span class="g-segno"><span class="mk tipo-${k}">${SIMBOLO[k]}</span></span><div><b>${esc(t.nome)}</b>${{
       R: ": rifugio custodito, dove mangiare e dormire nella stagione di apertura.",
       B: ": bivacco o ricovero sempre aperto, senza gestore: riparo d'emergenza.",
-      W: ": fontanella di acqua potabile.",
-      S: ": sorgente naturale. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",
+      W: ": fontanella di acqua potabile, a meno di 300 metri da un sentiero.",
+      S: ": sorgente naturale a meno di 300 metri da un sentiero. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",
       C: ": bar, ristorante, pub o agriturismo a meno di 300 metri da un sentiero. Si vedono scegliendo “Bar e ristoranti” nel menu; nella scheda di ogni sentiero c'è l'elenco di quelli lungo il percorso.",
       F: ": funivia, cabinovia, seggiovia o funicolare. Sulla mappa è una linea scura dalla stazione a valle (dove sta il simbolo) a quella a monte. Si vedono scegliendo “Funivie e seggiovie” nel menu."
     }[k] || "."}</div></li>`).join("");
