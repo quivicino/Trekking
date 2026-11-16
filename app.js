@@ -1280,7 +1280,7 @@
     const li = document.createElement("li");
     li.className = "voce";
     li.tabIndex = 0;
-    const meta = [pastiglia(s.d), `<span>${QT.formattaKm(s.l)}</span>`];
+    const meta = [pastiglia(s.d), `<span class="voce-km">${QT.formattaKm(s.l)}</span>`];
     const av = avvisoCai(s);
     if (av) meta.unshift(`<span class="tag cai-${av}">⚠ ${PERCORRIBILITA[av]}</span>`);
     const c = caiUsabile(s, quoteCalcolate.get(s.i)), su = s.su != null ? s.su : c && c.su;
