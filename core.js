@@ -510,6 +510,27 @@
     return Math.max(orizz, vert) + Math.min(orizz, vert) / 2;
   }
 
+  /**
+   * I tempi (e i dislivelli) del Catasto CAI tornano con il sentiero? Su OSM2CAI alcuni sentieri hanno
+   * la traccia incompleta (per esempio 0,4 km invece di 4) e quindi tempi di 15 minuti per ore di cammino.
+   * c = dato CAI {af, ar, km}; metri = lunghezza del sentiero nell'app; su, giu = dislivello di OSM o delle quote (o null).
+   * Si scartano i tempi sotto la metà della stima CAI/CAS (senza dislivello, del solo tempo in piano)
+   * e quelli di un catasto con la lunghezza molto diversa (quando c'è).
+   */
+  function caiCoerente(c, metri, su, giu) {
+    if (!c || !(metri > 0)) return true;
+    if (c.km != null && c.km > 0) {
+      const r = c.km * 1000 / metri;
+      if (r < 0.7 || r > 1.4) return false;
+    }
+    const prova = (t, a, b) => {
+      if (!t) return true;
+      const stima = tempoStimato(metri, a || 0, b || 0);
+      return t >= stima * 0.5;   // i tempi lunghi si lasciano: vie ferrate e passaggi difficili rallentano
+    };
+    return prova(c.af, su, giu) && prova(c.ar, giu, su);
+  }
+
   function titoloSentiero(s) {
     if (s.n) return s.n;
     if (s.r) return (s.cai ? "Sentiero CAI " : "Sentiero ") + s.r;
@@ -839,7 +860,7 @@
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
     TIPI, RAGGIO_RISTORO, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
-    compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, titoloSentiero, sottotitoloSentiero,
+    compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, caiCoerente, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,
     daMercatore, tracciaWmt, capiPercorso, fileTraccia, nomeFile, FORMATI
