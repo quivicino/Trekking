@@ -11,6 +11,7 @@
   const salvaPref = (k, v) => { try { localStorage.setItem(PREF + k, String(v)); } catch (e) { /* ignora */ } };
 
   const RAGGI = [2000, 5000, 10000, 15000, 25000];
+  let mostraNumeri = leggiPref("numeri", "1") !== "0";
   const stato = {
     gps: null,          // ultima posizione GPS {lat, lon, acc}
     centro: null,       // punto della ricerca {lat, lon, daGps}
@@ -1228,7 +1229,7 @@
       }).on("click", tocca).addTo(livelli.sentieri));
       // segnavia col numero a metà del tratto più lungo
       let etichetta = null;
-      if (s.r || s.sim) {
+      if ((s.r || s.sim) && mostraNumeri) {
         const l = s.g[0];
         const m = l[Math.floor(l.length / 2)];
         etichetta = L.marker(m, {
@@ -1634,6 +1635,14 @@
     ricalcola();
   }
   $("cat-sentieri").addEventListener("change", cambiaCategoria);
+  // Numero dei sentieri (segnavia) sulla mappa: dove i sentieri sono fitti si può spegnere; resta salvato sul telefono
+  $("numeri-segno").innerHTML = QT.svgSimbolo(QT.SIMBOLO_CAI, 28, "123");
+  $("mostra-numeri").checked = mostraNumeri;
+  $("mostra-numeri").addEventListener("change", (e) => {
+    mostraNumeri = e.target.checked;
+    salvaPref("numeri", mostraNumeri ? "1" : "0");
+    render();
+  });
   $("cat-voci").addEventListener("change", cambiaCategoria);
   function apriCategorie(apri) {
     $("cat-menu").hidden = !apri;
