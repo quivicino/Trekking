@@ -101,11 +101,57 @@
     return null;
   }
 
+  // ---------- Webcam ----------
+  // Su OSM una webcam ha il link in contact:webcam (o webcam, url:webcam): può stare su un oggetto a sé
+  // (man_made=surveillance) o direttamente sul rifugio. Non sono punti da mostrare: le webcam a meno di
+  // RAGGIO_WEBCAM metri da un rifugio o bivacco finiscono nel suo campo "wc" = [[link, metri], …].
+  const RAGGIO_WEBCAM = 300;
+  function linkWebcam(t) {
+    for (const c of ["contact:webcam", "webcam", "url:webcam"]) {
+      const v = String((t && t[c]) || "").split(";")[0].trim();
+      if (/^https?:\/\/\S+$/i.test(v)) return v;
+    }
+    return null;
+  }
+  /** Toglie dall'elenco le webcam (k "V") e le aggiunge ai rifugi e bivacchi vicini. */
+  function associaWebcam(punti) {
+    const cam = punti.filter((p) => p.k === "V");
+    if (!cam.length) return punti;
+    const resto = punti.filter((p) => p.k !== "V");
+    const cella = (la, lo) => Math.floor(la / 0.01) + ":" + Math.floor(lo / 0.01);
+    const griglia = new Map();
+    for (const c of cam) {
+      const k = cella(c.la, c.lo);
+      if (!griglia.has(k)) griglia.set(k, []);
+      griglia.get(k).push(c);
+    }
+    for (const p of resto) {
+      if (p.k !== "R" && p.k !== "B") continue;
+      const i0 = Math.floor(p.la / 0.01), j0 = Math.floor(p.lo / 0.01);
+      const trovate = (p.wc || []).slice();
+      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+        for (const c of griglia.get((i0 + di) + ":" + (j0 + dj)) || []) {
+          const m = Math.round(distanza(p.la, p.lo, c.la, c.lo));
+          if (m > RAGGIO_WEBCAM || trovate.some((w) => w[0] === c.u)) continue;
+          trovate.push([c.u, m]);
+        }
+      }
+      if (trovate.length) p.wc = trovate.sort((a, b) => a[1] - b[1]).slice(0, 3);
+    }
+    return resto;
+  }
+
   // Punto compatto: solo i campi che servono all'app
   function compatta(el) {
     const t = el.tags || {};
     const k = tipoDaTag(t);
-    if (!k) return null;
+    if (!k) {
+      // una webcam da sola: si tiene solo per associarla ai rifugi vicini
+      const u = linkWebcam(t);
+      const la = el.lat ?? (el.center && el.center.lat), lo = el.lon ?? (el.center && el.center.lon);
+      if (!u || la == null || lo == null) return null;
+      return { i: el.type[0] + el.id, k: "V", la: +la.toFixed(6), lo: +lo.toFixed(6), u };
+    }
     let g = null;
     if (k === "F") {
       // solo vie con la traccia (out geom): punto alla stazione a valle
@@ -125,6 +171,7 @@
     metti("w", t.website || t["contact:website"] || t.url);
     metti("o", t.operator);
     if (k !== "C" && k !== "F") metti("p", t.beds || t.capacity);
+    if ((k === "R" || k === "B") && linkWebcam(t)) p.wc = [[linkWebcam(t), 0]];
     if (k === "C") metti("y", tipoLocale(t));
     if (k === "F") {
       metti("y", tipoImpianto(t));
@@ -703,7 +750,8 @@
       `node[amenity=water_point]${vicino};` +
       `node[amenity=fountain][drinking_water=yes]${vicino};` +
       `node[natural=spring]${vicino};` +
-      `);out center tags;`;
+      `);out center tags;` +
+      `nwr${b}[~"^(contact:webcam|webcam|url:webcam)$"~"^http"];out center tags;`;
   }
 
   /** Divide la risposta di Overpass in sentieri e punti. */
@@ -718,7 +766,7 @@
         if (p) punti.push(p);
       }
     }
-    return { sentieri, punti };
+    return { sentieri, punti: associaWebcam(punti) };
   }
 
   // ---------- Vicini ----------
@@ -862,7 +910,7 @@
 
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
-    TIPI, RAGGIO_RISTORO, SOLO_VICINO, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
+    TIPI, RAGGIO_RISTORO, SOLO_VICINO, RAGGIO_WEBCAM, linkWebcam, associaWebcam, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, caiCoerente, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,

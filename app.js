@@ -511,6 +511,26 @@
   const BOTTONE_MAPPA = '<button type="button" class="pop-vai pop-mappa">Vedi sulla mappa</button>';
   const BOTTONE_CAMMINA = '<button type="button" class="pop-vai pop-mappa">Cammina sul sentiero</button>';
 
+  // Webcam entro 300 m da un rifugio o bivacco (d.wc = [[link, metri], …]). Un'immagine .jpg/.png
+  // su https si vede nella scheda (ricaricata a ogni apertura); una pagina o un'immagine http si apre fuori.
+  function bloccoWebcam(wc) {
+    const ora = Math.floor(Date.now() / 60000);
+    const voci = wc.map(([u, m]) => {
+      const dove = m < 20 ? "sul posto" : `a ${Math.round(m / 10) * 10} m`;
+      const immagine = /^https:/.test(u) && /\.(jpe?g|png|webp)(\?|$)|\/image\.jpg|\/current\//i.test(u);
+      if (immagine) {
+        const src = u + (u.includes("?") ? "&" : "?") + "t=" + ora;
+        return `<figure class="pop-webcam"><a href="${attr(src)}" target="_blank" rel="noopener">
+          <img src="${attr(src)}" alt="Immagine della webcam" loading="lazy" onerror="this.closest('figure').classList.add('rotta')"></a>
+          <figcaption>Webcam ${dove} · <a href="${attr(src)}" target="_blank" rel="noopener">ingrandisci</a></figcaption>
+          <p class="rotta-testo">Immagine non disponibile ora · <a href="${attr(u)}" target="_blank" rel="noopener">prova ad aprirla</a></p></figure>`;
+      }
+      return `<a class="pop-webcam-link" href="${attr(u)}" target="_blank" rel="noopener">📷 Apri la webcam <span>${dove} · sito esterno</span></a>`;
+    });
+    return `<div class="pop-webcam-box"><b>Webcam qui vicino</b>${voci.join("")}
+      <p class="fonte">Immagini dei rispettivi siti: possono essere ferme o non aggiornate.</p></div>`;
+  }
+
   function popupPunto(d) {
     const tit = QT.titolo(d);
     const tipo = QT.nomeTipo(d);
@@ -547,6 +567,7 @@
     const tel = telefoni(d.t);
     if (tel.length) righe.push(`<p>Tel. ${tel.map((n) => `<a href="tel:${attr(n.replace(/[^\d+]/g, ""))}">${esc(n)}</a>`).join(" · ")}</p>`);
     if (d.w) righe.push(`<p><a href="${attr(sitoWeb(d.w))}" target="_blank" rel="noopener">Sito web</a></p>`);
+    if (d.wc && d.wc.length) righe.push(bloccoWebcam(d.wc));
     righe.push(`<p>${d.k === "F" ? "Stazione a valle a " : ""}${QT.formattaDistanza(d.distanza)} in linea d'aria</p>`);
     voce.push(distanzaParlata(d.distanza) + " in linea d'aria.");
     righe.push(`<p class="fonte">Fonte: OpenStreetMap · <a href="${attr(linkOsm(d))}" target="_blank" rel="noopener">Vedi su OpenStreetMap</a></p>`);
@@ -1701,7 +1722,7 @@
     `<li><span class="g-segno">${QT.svgSimbolo(QT.SIMBOLO_CAI, 28, "123")}</span><div><b>Segnavia</b>: il simbolo dipinto lungo il sentiero, con il suo numero. Quello bianco e rosso è il segnavia del CAI.</div></li>`;
   $("g-legenda").innerHTML = Object.entries(QT.TIPI).map(([k, t]) =>
     `<li><span class="g-segno"><span class="mk tipo-${k}">${SIMBOLO[k]}</span></span><div><b>${esc(t.nome)}</b>${{
-      R: ": rifugio custodito, dove mangiare e dormire nella stagione di apertura.",
+      R: ": rifugio custodito, dove mangiare e dormire nella stagione di apertura. Se c'è una webcam a meno di 300 metri, la scheda ne mostra l'immagine o il link.",
       B: ": bivacco o ricovero sempre aperto, senza gestore: riparo d'emergenza.",
       W: ": fontanella di acqua potabile, a meno di 300 metri da un sentiero.",
       S: ": sorgente naturale a meno di 300 metri da un sentiero. Si vedono solo scegliendo “Sorgenti” nel menu: l'acqua spesso non è controllata.",

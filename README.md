@@ -20,6 +20,9 @@ Web app per il telefono che mostra i **sentieri** vicino a te, con lo stesso asp
 - **funivie, cabinovie, seggiovie e impianti misti** (`aerialway=cable_car|gondola|chair_lift|mixed_lift`) e **funicolari** (`railway=funicular`),
   senza sciovie e skilift: linea sulla mappa e scheda con tipo, lunghezza, durata della corsa, posti, orari e sito. Sono salvati come un punto
   (tipo `F`) alla stazione a valle, con la traccia in `tr`. Voce «Funivie e seggiovie» nel menu, spenta all'inizio.
+- **webcam** (link in `contact:webcam`, `webcam` o `url:webcam`, su un oggetto a sé o sul rifugio stesso): non sono punti sulla mappa,
+  ma finiscono nel campo `wc` dei rifugi e bivacchi a meno di **300 m** (`associaWebcam` in `core.js`). Nella scheda il riquadro
+  «Webcam qui vicino» mostra l'immagine se il link è un'immagine su https, altrimenti un pulsante che apre la pagina della webcam.
 
 ## Come funziona
 
