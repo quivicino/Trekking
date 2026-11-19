@@ -536,6 +536,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .profilo path.linea { fill: none; stroke: var(--blu); stroke-width: 2; }
 
 /* ---- Foto delle fontanelle (salvata sul telefono) ---- */
+.pop-webcam-box { margin: 10px 0; }
+.pop-webcam-box > b { display: block; font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.pop-webcam { margin: 0 0 10px; }
+.pop-webcam img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--bg); }
+.pop-webcam figcaption { font-size: 14px; color: var(--testo-2); margin-top: 4px; }
+.pop-webcam .rotta-testo { display: none; font-size: 14px; color: var(--testo-2); margin: 0; }
+.pop-webcam.rotta a:first-child, .pop-webcam.rotta figcaption { display: none; }
+.pop-webcam.rotta .rotta-testo { display: block; }
+.pop-webcam-link { display: block; padding: 10px 12px; margin: 0 0 8px; border-radius: 12px; background: var(--bg); color: var(--testo); font-weight: 700; text-decoration: none; }
+.pop-webcam-link span { display: block; font-weight: 400; font-size: 13px; color: var(--testo-2); }
 .pop-foto { margin: 10px 0 4px; }
 .pop-foto img { display: block; width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; }
 .pop-foto .pop-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
