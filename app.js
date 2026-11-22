@@ -24,7 +24,8 @@
     viciniP: [],        // punti entro il raggio, con distanza e apertura
     filtri: new Set(),
     caricando: false,
-    seguiGps: true
+    seguiGps: true,
+    percorso: null      // percorso a piedi da A a B (BRouter): { punti, quote, dist, metri, su, giu, fondo, da, a }
   };
   if (!RAGGI.includes(stato.raggio)) stato.raggio = 15000;
   const CHIAVI_DIFF = QT.ORDINE_DIFF.map((d) => "D" + d);
@@ -574,6 +575,7 @@
     if (d.k === "W" || d.k === "S") righe.push(`<div class="pop-foto" data-id="${attr(d.i)}"></div>`);
     const pulsanti = [`<a class="pop-vai" href="${linkNavigazione(d.la, d.lo)}" target="_blank" rel="noopener">${d.k === "F" ? "Portami alla partenza" : "Portami qui"}</a>`];
     if (tel.length) pulsanti.push(`<a class="pop-vai pop-chiama" href="tel:${attr(tel[0].replace(/[^\d+]/g, ""))}">Chiama</a>`);
+    pulsanti.push(`<button type="button" class="pop-vai pop-apiedi" data-lat="${d.la}" data-lon="${d.lo}" data-nome="${attr(tit)}">A piedi fin qui</button>`);
     pulsanti.push(BOTTONE_MAPPA);
     return `<div class="pop" data-voce="${attr(voce.join(" "))}"><h3>${esc(tit)}</h3>${righe.join("")}
       <div class="pop-pulsanti">${pulsanti.join("")}</div></div>`;
@@ -1142,7 +1144,7 @@
     scelto = s || null;
     livelli.scelto.clearLayers();
     // non disegnato (fuori dalle difficoltà scelte o dai filtri): lo si disegna a parte
-    if (s && !lineePerId.has(s.i)) {
+    if (s && !s.percorso && !lineePerId.has(s.i)) {
       s.g.forEach((l) => L.polyline(l, { renderer: tela, color: "#ffffff", weight: 11, opacity: .85, interactive: false }).addTo(livelli.scelto));
       s.g.forEach((l) => L.polyline(l, { renderer: tela, color: coloreDiff(s.d), weight: 7, interactive: false }).addTo(livelli.scelto));
     }
@@ -1467,8 +1469,9 @@
     $("guida-freccia").style.transform = "rotate(" + Math.round(dir || 0) + "deg)";
     $("guida-freccia").style.visibility = dir == null ? "hidden" : "visible";
     const card = dir == null ? "" : " (" + QT.puntoCardinale(dir) + ")";
-    $("guida-testo").textContent = sopra ? "Sei sul sentiero: segui la freccia" + card
-      : "Sentiero a " + QT.formattaDistanza(g.distanza) + ": vai verso la freccia" + card;
+    const cosa = scelto.percorso ? "percorso" : "sentiero";
+    $("guida-testo").textContent = sopra ? "Sei sul " + cosa + ": segui la freccia" + card
+      : cosa.charAt(0).toUpperCase() + cosa.slice(1) + " a " + QT.formattaDistanza(g.distanza) + ": vai verso la freccia" + card;
     box.classList.toggle("fuori", !sopra);
     if (!sopra) {
       L.polyline([[lat, lon], g.punto], { renderer: tela, color: "#2f7cf6", weight: 3, dashArray: "6 8", interactive: false }).addTo(livelli.guida);
@@ -1476,8 +1479,314 @@
     }
   }
 
-  $("guida-esci").addEventListener("click", (e) => { e.stopPropagation(); scegliSentiero(null, true); });
+  // Esci: termina la navigazione; se stavi seguendo il percorso a piedi, chiude anche quello
+  $("guida-esci").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (scelto && scelto.percorso) chiudiPercorso();
+    else {
+      scegliSentiero(null, true);
+      // lasciato il sentiero, se c'è un percorso a piedi la freccia torna a guidare lungo quello
+      if (stato.percorso) scegliSentiero(stato.percorso.sentiero);
+    }
+  });
   L.DomEvent.disableClickPropagation($("guida-rotta"));
+
+  // ---------- Percorso a piedi da A a B ----------
+  // Come «Distributori sul percorso» di Qui-Distributori: scrivi partenza e arrivo (o sceglili sulla mappa),
+  // il percorso a piedi sui sentieri lo calcola BRouter (gratuito, senza chiave, dati OpenStreetMap, profilo
+  // escursionismo «hiking-mountain»). Sulla mappa la linea fucsia con A e B, in basso il profilo altimetrico;
+  // la freccia del riquadro di navigazione guida lungo il percorso come su un sentiero.
+  const COLORE_PERCORSO = "#d61f8c";
+  const percorsoAttivo = () => stato.percorso || null;
+  livelli.percorso = L.layerGroup().addTo(mappa);
+  livelli.percorso.setZIndex && livelli.percorso.setZIndex(5);
+  let lineaPercorso = null, puntoProfilo = null;
+
+  // "lat, lon" scritti a mano (anche con la virgola decimale: 45,85 9,39)
+  function leggiCoordinate(t) {
+    const m = /^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/.exec(t);
+    if (!m) return null;
+    const lat = +m[1].replace(",", "."), lon = +m[2].replace(",", ".");
+    return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon, nome: lat.toFixed(5) + ", " + lon.toFixed(5) } : null;
+  }
+  async function geocodifica(q) {
+    const c = leggiCoordinate(q);
+    if (c) return c;
+    // si preferiscono i risultati vicini alla zona della mappa (rifugi e cime con lo stesso nome sono tanti)
+    const b = mappa.getBounds().pad(1);
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=it&accept-language=it" +
+      `&viewbox=${b.getWest().toFixed(4)},${b.getNorth().toFixed(4)},${b.getEast().toFixed(4)},${b.getSouth().toFixed(4)}&q=` + encodeURIComponent(q);
+    const [primo] = await fetchJson(url, { headers: { Accept: "application/json" } }, 12000);
+    if (!primo) return null;
+    const nome = (primo.name || String(primo.display_name || q).split(",")[0] || q).trim();
+    return { lat: +primo.lat, lon: +primo.lon, nome };
+  }
+
+  async function calcolaPercorso(da, a, profilo) {
+    const url = "https://brouter.de/brouter?lonlats=" +
+      `${da.lon.toFixed(6)},${da.lat.toFixed(6)}|${a.lon.toFixed(6)},${a.lat.toFixed(6)}` +
+      `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson`;
+    const r = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
+    const testo = await r.text();
+    let dati = null;
+    try { dati = JSON.parse(testo); } catch (e) { /* BRouter risponde con un testo quando non trova il percorso */ }
+    const p = dati && QT.leggiBrouter(dati);
+    if (!p) throw new Error(testo.slice(0, 200) || "percorso non trovato");
+    return p;
+  }
+
+  // Campi A e B: il testo scritto, oppure un punto preciso (scelto sulla mappa o da una scheda) in data-lat/data-lon
+  function puntoCampo(id) {
+    const el = $(id), t = el.value.trim();
+    if (el.dataset.lat && t === el.dataset.nome) return { lat: +el.dataset.lat, lon: +el.dataset.lon, nome: t };
+    return t ? { testo: t } : null;
+  }
+  function impostaCampo(id, p) {
+    const el = $(id);
+    if (p && p.lat != null) { el.value = p.nome; el.dataset.lat = p.lat; el.dataset.lon = p.lon; el.dataset.nome = p.nome; }
+    else { el.value = p ? p.testo || "" : ""; delete el.dataset.lat; delete el.dataset.lon; delete el.dataset.nome; }
+  }
+  ["perc-da", "perc-a"].forEach((id) => {
+    try { const v = JSON.parse(leggiPref(id === "perc-da" ? "percDa" : "percA", "null")); if (v) impostaCampo(id, v); } catch (e) { /* ignora */ }
+  });
+  $("perc-profilo").value = leggiPref("percProfilo", "hiking-mountain");
+  if (!$("perc-profilo").value) $("perc-profilo").value = "hiking-mountain";
+
+  function apriPercorso() {
+    chiudiAnteprima();
+    $("percorso").hidden = false;
+    $("btn-percorso").setAttribute("aria-expanded", "true");
+    const a = $("perc-a");
+    setTimeout(() => (a.value ? $("btn-perc-vai") : a).focus(), 50);
+  }
+  function chiudiFormPercorso() {
+    if ($("percorso").hidden) return false;
+    $("percorso").hidden = true;
+    $("btn-percorso").setAttribute("aria-expanded", "false");
+    return true;
+  }
+
+  // Scegli sulla mappa: il riquadro si nasconde, il primo tocco sulla mappa diventa il punto
+  let sceltaSuMappa = null;
+  function iniziaSceltaMappa(id) {
+    sceltaSuMappa = id;
+    chiudiFormPercorso();
+    $("mappa").classList.add("scelta-mappa");
+    toast(id === "perc-da" ? "Tocca la mappa nel punto di partenza" : "Tocca la mappa nel punto di arrivo");
+  }
+  // in cattura, prima di Leaflet: il tocco non apre sentieri né punti
+  $("mappa").addEventListener("click", (e) => {
+    if (!sceltaSuMappa) return;
+    if (e.target.closest && e.target.closest(".leaflet-control, .guida-rotta")) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const ll = mappa.mouseEventToLatLng(e);
+    const id = sceltaSuMappa;
+    sceltaSuMappa = null;
+    $("mappa").classList.remove("scelta-mappa");
+    impostaCampo(id, { lat: +ll.lat.toFixed(6), lon: +ll.lng.toFixed(6), nome: "Punto sulla mappa (" + ll.lat.toFixed(4).replace(".", ",") + "; " + ll.lng.toFixed(4).replace(".", ",") + ")" });
+    apriPercorso();
+  }, true);
+  document.querySelectorAll(".perc-mappa").forEach((b) => b.addEventListener("click", () => iniziaSceltaMappa(b.dataset.campo)));
+
+  function disegnaPercorso() {
+    livelli.percorso.clearLayers();
+    puntoProfilo = null;
+    const p = percorsoAttivo();
+    if (!p) { lineaPercorso = null; return; }
+    L.polyline(p.punti, { color: "#fff", weight: 10, opacity: .9, interactive: false }).addTo(livelli.percorso);
+    lineaPercorso = L.polyline(p.punti, { color: COLORE_PERCORSO, weight: 6, opacity: .95, interactive: false }).addTo(livelli.percorso);
+    const pin = (cls, testo) => L.divIcon({ className: "", html: `<div class="perc-pin ${cls}">${testo}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+    L.marker(p.punti[0], { icon: pin("da", "A"), interactive: false, zIndexOffset: 2500 }).addTo(livelli.percorso);
+    L.marker(p.punti[p.punti.length - 1], { icon: pin("a", "B"), interactive: false, zIndexOffset: 2500 }).addTo(livelli.percorso);
+  }
+
+  // Tutto il percorso sulla mappa, tra la barra (o il riquadro della freccia) in alto e il profilo in basso
+  function inquadraPercorso() {
+    if (!lineaPercorso) return;
+    const gr = $("guida-rotta");
+    const sopra = gr.hidden ? 80 : gr.offsetTop + gr.offsetHeight + 16;
+    stato.seguiGps = false;
+    mappa.fitBounds(lineaPercorso.getBounds(), {
+      paddingTopLeft: [30, sopra], paddingBottomRight: [30, $("percorso-info").offsetHeight + 46], maxZoom: 16
+    });
+  }
+  function tempoPercorso(p) { return QT.tempoStimato(p.metri, p.su || 0, p.giu || 0); }
+  function aggiornaModoPercorso() {
+    const p = percorsoAttivo();
+    $("percorso-barra").hidden = !p;
+    $("percorso-info").hidden = !p;
+    $("btn-percorso").setAttribute("aria-pressed", String(!!p));
+    if (p) {
+      $("percorso-testo").textContent = `${p.daGps ? "Da qui" : p.da} → ${p.a} · ${QT.formattaKm(p.metri)}`;
+      const num = [`<span>${QT.formattaKm(p.metri)}</span>`];
+      if (p.su != null) num.push(`<span>↗ ${p.su} m</span>`);
+      if (p.giu != null) num.push(`<span>↘ ${p.giu} m</span>`);
+      num.push(`<span>${QT.formattaOre(tempoPercorso(p))} <small>stima</small></span>`);
+      if (p.min != null) num.push(`<small>quota ${p.min}–${QT.formattaQuota(p.max)}</small>`);
+      $("pi-num").innerHTML = num.join("");
+      const tot = p.fondo.sentiero + p.fondo.sterrata + p.fondo.strada;
+      const pc = (x) => Math.round(x / tot * 100);
+      $("pi-fondo").innerHTML = tot ? [["sentiero", "sentieri", COLORE_PERCORSO], ["sterrata", "sterrate", "#b8873b"], ["strada", "strade", "#7a8291"]]
+        .filter(([k]) => p.fondo[k] / tot >= 0.01).map(([k, t, c]) => `<span><i style="background:${c}"></i>${t} ${pc(p.fondo[k])}%</span>`).join(" · ") : "";
+      disegnaProfilo(p);
+    }
+    posizionaAzioni();
+  }
+  // i pulsanti rotondi in basso a sinistra salgono sopra il riquadro del profilo
+  function posizionaAzioni() {
+    const box = $("percorso-info"), az = document.querySelector(".fab-azioni");
+    if (!az) return;
+    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 26) + "px";
+  }
+  window.addEventListener("resize", posizionaAzioni);
+
+  // ---------- Profilo altimetrico del percorso ----------
+  // Tocca o trascina il dito sul profilo: un pallino mostra quel punto sulla mappa, con distanza e quota.
+  function disegnaProfilo(p) {
+    const box = $("pi-profilo");
+    const serie = QT.serieProfilo(p, 300);
+    if (serie.length < 3) { box.innerHTML = '<p class="pi-asse" style="position:static">Quote non disponibili</p>'; return; }
+    const W = 1000, H = 100, tot = p.dist[p.dist.length - 1] || 1;
+    let min = Math.min(...serie.map((s) => s.q)), max = Math.max(...serie.map((s) => s.q));
+    // almeno 100 m di scala, così un percorso in piano non sembra una montagna
+    if (max - min < 100) { const m = (max + min) / 2; min = m - 50; max = m + 50; }
+    const x = (m) => (m / tot) * W, y = (q) => H - 2 - ((q - min) / (max - min)) * (H - 8);
+    const linea = serie.map((s, i) => (i ? "L" : "M") + x(s.m).toFixed(1) + " " + y(s.q).toFixed(1)).join("");
+    const passoKm = [0.5, 1, 2, 5, 10, 20].find((k) => tot / 1000 / k <= 6) || 50;
+    let griglia = "";
+    for (let k = passoKm; k * 1000 < tot; k += passoKm) griglia += `<path class="griglia" d="M${x(k * 1000).toFixed(1)} 0V${H}"/>`;
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${griglia}` +
+      `<path class="area" d="${linea}L${W} ${H}L0 ${H}Z"/><path class="linea" d="${linea}"/>` +
+      `<path class="cursore" id="pi-cursore" d="M0 0V${H}" visibility="hidden"/></svg>` +
+      `<span class="pi-asse" style="left:0;top:0">${QT.formattaQuota(Math.round(max))}</span>` +
+      `<span class="pi-asse" style="left:0;bottom:0">${QT.formattaQuota(Math.round(min))}</span>` +
+      `<span class="pi-asse" style="right:0;bottom:0">${QT.formattaKm(tot)}</span>` +
+      `<span class="pi-etichetta" id="pi-etichetta" hidden></span>`;
+  }
+  function puntoDelProfilo(e) {
+    const p = percorsoAttivo();
+    if (!p) return;
+    const box = $("pi-profilo"), r = box.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const tot = p.dist[p.dist.length - 1], m = f * tot;
+    let i = 0;
+    while (i < p.dist.length - 1 && p.dist[i + 1] <= m) i++;
+    const cur = $("pi-cursore"), et = $("pi-etichetta");
+    if (cur) { cur.setAttribute("d", `M${(f * 1000).toFixed(1)} 0V100`); cur.setAttribute("visibility", "visible"); }
+    if (et) {
+      et.hidden = false;
+      et.textContent = QT.formattaKm(p.dist[i]) + (p.quote[i] != null ? " · " + QT.formattaQuota(p.quote[i]) : "");
+      et.style.left = Math.max(40, Math.min(r.width - 40, f * r.width)) + "px";
+    }
+    const pt = p.punti[i];
+    if (!puntoProfilo) {
+      puntoProfilo = L.marker(pt, { icon: L.divIcon({ className: "", html: '<div class="perc-pin qui"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }), interactive: false, zIndexOffset: 2600 }).addTo(livelli.percorso);
+    } else puntoProfilo.setLatLng(pt);
+    if (!mappa.getBounds().pad(-0.1).contains(pt)) { stato.seguiGps = false; mappa.panTo(pt); }
+  }
+  {
+    const box = $("pi-profilo");
+    let premuto = false;
+    box.addEventListener("pointerdown", (e) => { premuto = true; try { box.setPointerCapture(e.pointerId); } catch (x) { /* ignora */ } puntoDelProfilo(e); });
+    box.addEventListener("pointermove", (e) => { if (premuto || e.pointerType === "mouse") puntoDelProfilo(e); });
+    const fine = () => { premuto = false; };
+    box.addEventListener("pointerup", fine);
+    box.addEventListener("pointercancel", fine);
+    L.DomEvent.disableClickPropagation($("percorso-info"));
+    L.DomEvent.disableScrollPropagation($("percorso-info"));
+  }
+
+  // Esce dal percorso a piedi (e dalla sua navigazione)
+  function chiudiPercorso() {
+    if (!stato.percorso) return;
+    stato.percorso = null;
+    disegnaPercorso();
+    if (scelto && scelto.percorso) scegliSentiero(null, true);
+    aggiornaModoPercorso();
+  }
+
+  // Avvia il percorso: la linea sulla mappa, il profilo in basso e la navigazione con la freccia
+  function avviaPercorso(r, da, a, profilo) {
+    stato.percorso = Object.assign(r, { da: da.nome, daGps: !!da.gps, a: a.nome, profilo });
+    disegnaPercorso();
+    aggiornaModoPercorso();
+    chiudiAnteprima();
+    stato.seguiGps = false;
+    // per la freccia il percorso è un "sentiero" con una sola linea, già disegnato qui
+    stato.percorso.sentiero = { i: "percorso", percorso: true, g: [r.punti], d: "ND", l: r.metri, n: da.nome + " → " + a.nome };
+    scegliSentiero(stato.percorso.sentiero);
+    inquadraPercorso();
+    if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "percorso-a-piedi", title: "Percorso a piedi", event: true });
+  }
+
+  $("percorso").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cDa = puntoCampo("perc-da"), cA = puntoCampo("perc-a");
+    if (!cA) { $("perc-a").focus(); return; }
+    const profilo = $("perc-profilo").value || "hiking-mountain";
+    salvaPref("percDa", JSON.stringify(cDa)); salvaPref("percA", JSON.stringify(cA)); salvaPref("percProfilo", profilo);
+    const vai = $("btn-perc-vai");
+    const avviso = (t) => { $("perc-errore").textContent = t; $("perc-errore").hidden = !t; };
+    avviso("");
+    vai.disabled = true;
+    vai.textContent = "Calcolo il percorso…";
+    try {
+      let da;
+      if (!cDa || (cDa.testo && /^(la )?mia posizione$|^qui$/i.test(cDa.testo))) {
+        if (!stato.gps) { avviso("Posizione non ancora disponibile: scrivi anche da dove parti o sceglilo sulla mappa."); return; }
+        da = { lat: stato.gps.lat, lon: stato.gps.lon, nome: "la tua posizione", gps: true };
+      } else {
+        da = cDa.lat != null ? cDa : await geocodifica(cDa.testo);
+        if (!da) { avviso("Partenza non trovata. Prova ad aggiungere il paese o sceglila sulla mappa."); return; }
+      }
+      const a = cA.lat != null ? cA : await geocodifica(cA.testo);
+      if (!a) { avviso("Arrivo non trovato. Prova ad aggiungere il paese o sceglilo sulla mappa."); return; }
+      if (QT.distanza(da.lat, da.lon, a.lat, a.lon) > 150000) { avviso("Partenza e arrivo sono a più di 150 km: a piedi è troppo lontano. Controlla i nomi."); return; }
+      let r;
+      try { r = await calcolaPercorso(da, a, profilo); }
+      catch (err) {
+        console.warn("BRouter", err);
+        avviso(navigator.onLine === false ? "Senza rete il percorso non si può calcolare."
+          : "Non trovo un percorso a piedi tra questi due punti. Prova a spostarli vicino a un sentiero o a una strada.");
+        return;
+      }
+      chiudiFormPercorso();
+      avviaPercorso(r, da, a, profilo);
+    } catch (err) {
+      console.warn("Percorso non calcolato", err);
+      avviso("Non riesco a calcolare il percorso. Controlla la connessione e riprova.");
+    } finally {
+      vai.disabled = false;
+      vai.textContent = "Calcola il percorso";
+    }
+  });
+  $("btn-percorso").addEventListener("click", () => { if (!chiudiFormPercorso()) apriPercorso(); });
+  $("btn-chiudi-form-percorso").addEventListener("click", chiudiFormPercorso);
+  $("percorso-testo").addEventListener("click", () => {
+    inquadraPercorso();
+    apriPercorso();
+  });
+  $("btn-esci-percorso").addEventListener("click", () => { chiudiFormPercorso(); chiudiPercorso(); });
+  $("btn-perc-inverti").addEventListener("click", () => {
+    const da = puntoCampo("perc-da"), a = puntoCampo("perc-a");
+    impostaCampo("perc-da", a); impostaCampo("perc-a", da);
+  });
+  $("btn-perc-gpx").addEventListener("click", () => {
+    const p = percorsoAttivo();
+    if (!p) return;
+    const nome = (p.daGps ? "Percorso" : p.da) + " - " + p.a;
+    consegnaFile(QT.fileTraccia([p.punti], nome, "gpx", { fonte: "Percorso a piedi calcolato da BRouter, dati © OpenStreetMap" }), QT.nomeFile(nome, "gpx"), QT.FORMATI.gpx.tipo);
+  });
+  // «Percorso a piedi fin qui» dalla scheda di un rifugio, bivacco o altro punto
+  $("scheda-contenuto").addEventListener("click", (e) => {
+    const b = e.target.closest(".pop-apiedi");
+    if (!b) return;
+    impostaCampo("perc-a", { lat: +b.dataset.lat, lon: +b.dataset.lon, nome: b.dataset.nome });
+    if (!$("perc-da").value.trim() || $("perc-da").dataset.lat) impostaCampo("perc-da", null);
+    chiudiScheda();
+    apriPercorso();
+  });
 
   function suPosizione(p) {
     const { latitude: lat, longitude: lon, accuracy: acc } = p.coords;
@@ -1756,7 +2065,7 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!$("cat-menu").hidden) { apriCategorie(false); $("categoria").focus(); return; }
-    if (!chiudiGuida() && !chiudiScheda()) chiudiElenco();
+    if (!chiudiGuida() && !chiudiScheda() && !chiudiFormPercorso()) chiudiElenco();
   });
 
   // ---------- Lettura vocale dei riquadri ----------
