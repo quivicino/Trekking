@@ -908,13 +908,61 @@
     return base + "." + FORMATI[formato].est;
   }
 
+
+  // ---------- Percorso a piedi da A a B (BRouter) ----------
+  // BRouter (brouter.de) calcola il percorso sui sentieri di OpenStreetMap; ogni punto ha anche la quota.
+  // Tipo di fondo dalle WayTags di ogni tratto: sentieri e mulattiere, sterrate, strade.
+  function fondoDaTag(tag) {
+    const h = (/(?:^| )highway=(\S+)/.exec(tag || "") || [])[1] || "";
+    if (/^(path|footway|steps|bridleway|via_ferrata|pedestrian_path)$/.test(h)) return "sentiero";
+    if (h === "track") return "sterrata";
+    return "strada";
+  }
+  /** Legge la risposta GeoJSON di BRouter: punti [lat, lon], quote, metri progressivi (dist), dislivello e fondo. */
+  function leggiBrouter(dati) {
+    const f = dati && dati.features && dati.features[0];
+    const c = f && f.geometry && f.geometry.coordinates;
+    if (!c || c.length < 2) return null;
+    const pr = f.properties || {};
+    const punti = c.map((p) => [p[1], p[0]]);
+    const quote = c.map((p) => (p.length > 2 && isFinite(p[2]) ? +p[2] : null));
+    const dist = [0];
+    for (let i = 1; i < punti.length; i++) dist.push(dist[i - 1] + distanza(punti[i - 1][0], punti[i - 1][1], punti[i][0], punti[i][1]));
+    const metri = +pr["track-length"] || dist[dist.length - 1];
+    const d = dislivello(quote, null, 5) || {};
+    let su = numero(pr["filtered ascend"]);
+    if (su == null) su = d.su ?? null;
+    const q0 = quote.find((q) => q != null), q1 = [...quote].reverse().find((q) => q != null);
+    const giu = su != null && q0 != null && q1 != null ? Math.max(0, Math.round(su + q0 - q1)) : d.giu ?? null;
+    // metri per tipo di fondo, dai "messages" (Distance = metri del tratto, WayTags)
+    const fondo = { sentiero: 0, sterrata: 0, strada: 0 };
+    const msg = pr.messages;
+    if (Array.isArray(msg) && msg.length > 1) {
+      const iD = msg[0].indexOf("Distance"), iW = msg[0].indexOf("WayTags");
+      if (iD >= 0 && iW >= 0) msg.slice(1).forEach((r) => { fondo[fondoDaTag(r[iW])] += +r[iD] || 0; });
+    }
+    return { punti, quote, dist, metri, su, giu, min: d.min ?? null, max: d.max ?? null, fondo };
+  }
+  /** Quote ridotte a "n" valori al massimo, per disegnare il profilo: [{m, q, i}] (m = metri dalla partenza) */
+  function serieProfilo(perc, n) {
+    n = n || 300;
+    const out = [], tot = perc.dist[perc.dist.length - 1] || 1;
+    let j = 0;
+    for (let k = 0; k < n; k++) {
+      const x = tot * k / (n - 1);
+      while (j < perc.dist.length - 1 && perc.dist[j + 1] <= x) j++;
+      if (perc.quote[j] != null) out.push({ m: perc.dist[j], q: perc.quote[j], i: j });
+    }
+    return out;
+  }
+
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
     TIPI, RAGGIO_RISTORO, SOLO_VICINO, RAGGIO_WEBCAM, linkWebcam, associaWebcam, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, caiCoerente, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,
-    daMercatore, tracciaWmt, capiPercorso, fileTraccia, nomeFile, FORMATI
+    daMercatore, tracciaWmt, capiPercorso, fileTraccia, nomeFile, FORMATI, fondoDaTag, leggiBrouter, serieProfilo
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else root.QT = API;

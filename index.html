@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
   <div class="app">
@@ -82,6 +82,62 @@
         <button class="fab" id="btn-aggiorna" type="button" title="Aggiorna" aria-label="Aggiorna i dati">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <button class="fab" id="btn-percorso" type="button" title="Percorso a piedi da A a B" aria-label="Percorso a piedi da A a B" aria-controls="percorso" aria-expanded="false" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg>
+        </button>
+      </div>
+
+      <div class="percorso-barra" id="percorso-barra" hidden>
+        <button class="percorso-testo" id="percorso-testo" type="button" aria-label="Modifica il percorso"></button>
+        <button class="percorso-esci" id="btn-esci-percorso" type="button" aria-label="Chiudi il percorso a piedi">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <form class="percorso" id="percorso" aria-labelledby="percorso-titolo" hidden>
+        <div class="percorso-testa">
+          <h2 id="percorso-titolo">Percorso a piedi</h2>
+          <button class="chiudi" id="btn-chiudi-form-percorso" type="button" aria-label="Chiudi">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="percorso-campi">
+          <div class="percorso-righe">
+            <div class="campo"><span class="perc-pin da">A</span>
+              <label class="sr-only" for="perc-da">Partenza</label>
+              <input id="perc-da" type="search" placeholder="La mia posizione" autocomplete="off" enterkeyhint="next">
+              <button class="perc-mappa" type="button" data-campo="perc-da" title="Scegli la partenza sulla mappa" aria-label="Scegli la partenza sulla mappa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5c0 4.8 6.5 12.5 6.5 12.5s6.5-7.7 6.5-12.5A6.5 6.5 0 0 0 12 2.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.4" fill="currentColor"/></svg></button>
+            </div>
+            <div class="campo"><span class="perc-pin a">B</span>
+              <label class="sr-only" for="perc-a">Arrivo</label>
+              <input id="perc-a" type="search" placeholder="Arrivo: rifugio, cima, paese…" autocomplete="off" enterkeyhint="go">
+              <button class="perc-mappa" type="button" data-campo="perc-a" title="Scegli l'arrivo sulla mappa" aria-label="Scegli l'arrivo sulla mappa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5c0 4.8 6.5 12.5 6.5 12.5s6.5-7.7 6.5-12.5A6.5 6.5 0 0 0 12 2.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.4" fill="currentColor"/></svg></button>
+            </div>
+          </div>
+          <button class="perc-inverti" id="btn-perc-inverti" type="button" title="Scambia partenza e arrivo" aria-label="Scambia partenza e arrivo">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 4v15M8 4 4.5 7.5M8 4l3.5 3.5M16 20V5M16 20l-3.5-3.5M16 20l3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="percorso-opz">
+          <label>Percorso
+            <select id="perc-profilo">
+              <option value="hiking-mountain" selected>Sui sentieri</option>
+              <option value="shortest">Il più corto</option>
+            </select>
+          </label>
+        </div>
+        <p class="perc-errore" id="perc-errore" role="alert" hidden></p>
+        <button class="btn-perc-vai" id="btn-perc-vai" type="submit">Calcola il percorso</button>
+        <p class="perc-nota">Percorso a piedi calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
+      </form>
+
+      <div class="percorso-info" id="percorso-info" hidden>
+        <div class="pi-num" id="pi-num"></div>
+        <div class="pi-profilo" id="pi-profilo" role="img" aria-label="Profilo altimetrico del percorso"></div>
+        <div class="pi-sotto">
+          <span class="pi-fondo" id="pi-fondo"></span>
+          <button class="pi-gpx" id="btn-perc-gpx" type="button">Salva GPX</button>
+        </div>
       </div>
 
       <div class="fab-azioni">
@@ -180,6 +236,7 @@
           Dati: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> e chi contribuisce
           (licenza ODbL); mappa topografica © <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA);
           quote del terreno da <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM);
+          percorso a piedi da A a B con <a href="https://brouter.de" target="_blank" rel="noopener">BRouter</a>;
           percorribilità e tempi dal <a href="https://osm2cai.cai.it" target="_blank" rel="noopener">Catasto sentieri CAI</a> (OSM2CAI);
           in Sardegna anche i sentieri di <a href="https://www.sardegnasentieri.it" target="_blank" rel="noopener">Sardegna Sentieri</a>
           © Agenzia Forestas (<a href="https://www.sardegnasentieri.it/pagina-base/note-legali" target="_blank" rel="noopener">CC BY-NC-SA</a>).
@@ -216,7 +273,7 @@
 
         <nav class="g-indice" aria-label="Argomenti">
           <a href="#g-difficolta">Difficoltà</a><a href="#g-mappa">Segnaposto</a><a href="#g-pulsanti">Pulsanti</a>
-          <a href="#g-elenco">Elenco e impostazioni</a><a href="#g-dati">I dati</a><a href="#g-consigli">Consigli</a>
+          <a href="#g-percorso">Percorso a piedi</a><a href="#g-elenco">Elenco e impostazioni</a><a href="#g-dati">I dati</a><a href="#g-consigli">Consigli</a>
         </nav>
 
         <section id="g-difficolta">
@@ -278,11 +335,33 @@
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti. All'avvio l'app riparte dall'ultima zona che guardavi: tocca qui per tornare dove sei.</div></li>
             <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i sentieri e i punti vicini e le impostazioni.</div></li>
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><div><b>Aggiorna</b>: riscarica subito i dati da OpenStreetMap.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg></span></span><div><b>Percorso a piedi</b>: il percorso sui sentieri da A a B, con il profilo altimetrico (vedi <i>Percorso a piedi</i>).</div></li>
             <li><span class="g-segno"><span class="btn-help g-help">HELP</span></span><div><b>HELP</b> (in alto nella pagina Elenco, accanto alla X): apre questa pagina.</div></li>
             <li><span class="g-segno"><span class="g-fab rifugio"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg></span></span><div><b>Rifugio</b>: porta la mappa sul rifugio più vicino aperto; se nessuno risulta aperto, sul più vicino.</div></li>
             <li><span class="g-segno"><span class="g-fab acqua"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/></svg></span></span><div><b>Fontanella</b>: porta la mappa sulla fontanella di acqua potabile più vicina.</div></li>
           </ul>
           <p>Per ingrandire o rimpicciolire la mappa usa due dita.</p>
+        </section>
+
+        <section id="g-percorso">
+          <h3>Percorso a piedi da A a B</h3>
+          <p>Tocca il pulsante <b>Percorso</b> (a destra, sotto Aggiorna) e scrivi da dove parti e dove vuoi arrivare: un paese, un rifugio,
+            una cima, un indirizzo, oppure le coordinate. Se lasci vuota la partenza si parte dalla tua posizione. Con il pulsante
+            <b>segnaposto</b> accanto a ogni casella scegli il punto toccando la mappa. Nella scheda di un rifugio, bivacco o altro punto,
+            <b>A piedi fin qui</b> lo mette come arrivo.</p>
+          <ul class="g-lista">
+            <li><b>Sui sentieri</b> preferisce sentieri e mulattiere, anche di montagna; <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
+            <li>Sulla mappa il percorso è una linea <b style="color:#d61f8c">fucsia</b> con <b>A</b> (partenza) e <b>B</b> (arrivo).</li>
+            <li>In basso un riquadro dice lunghezza, salita, discesa, tempo stimato e quota minima e massima; sotto c'è il <b>profilo altimetrico</b>:
+              tocca o trascina il dito sul profilo e un pallino ti mostra quel punto sulla mappa, con distanza dalla partenza e quota.</li>
+            <li>L'ultima riga dice quanta parte del percorso è su <b>sentieri</b>, su <b>sterrate</b> e su <b>strade</b>.
+              <b>Salva GPX</b> salva il percorso come file per un'altra app di navigazione.</li>
+            <li>La freccia in alto a sinistra ti guida lungo il percorso, come su un sentiero. La barra in alto riassume il percorso: toccala per cambiarlo;
+              la <b>X</b> (o <b>Esci</b> nel riquadro della freccia) chiude il percorso.</li>
+          </ul>
+          <p>Il percorso è calcolato da <b>BRouter</b>, un servizio gratuito che usa le mappe di OpenStreetMap; le quote sono quelle del modello del terreno.
+            Il tempo è una stima per un escursionista medio, senza soste. Il percorso può passare su sentieri difficili o chiusi:
+            prima di partire guarda la difficoltà dei sentieri sulla mappa e informati sul posto.</p>
         </section>
 
         <section id="g-elenco">
@@ -360,9 +439,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=34"></script>
-  <script src="core.js?v=23"></script>
-  <script src="app.js?v=33"></script>
+  <script src="config.js?v=35"></script>
+  <script src="core.js?v=24"></script>
+  <script src="app.js?v=34"></script>
   <script src="installa.js?v=20"></script>
 
   <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com
