@@ -936,12 +936,18 @@
     const giu = su != null && q0 != null && q1 != null ? Math.max(0, Math.round(su + q0 - q1)) : d.giu ?? null;
     // metri per tipo di fondo, dai "messages" (Distance = metri del tratto, WayTags)
     const fondo = { sentiero: 0, sterrata: 0, strada: 0 };
+    let segnati = 0;
     const msg = pr.messages;
     if (Array.isArray(msg) && msg.length > 1) {
       const iD = msg[0].indexOf("Distance"), iW = msg[0].indexOf("WayTags");
-      if (iD >= 0 && iW >= 0) msg.slice(1).forEach((r) => { fondo[fondoDaTag(r[iW])] += +r[iD] || 0; });
+      if (iD >= 0 && iW >= 0) msg.slice(1).forEach((r) => {
+        const m = +r[iD] || 0;
+        fondo[fondoDaTag(r[iW])] += m;
+        // tratti che fanno parte di un sentiero segnato (relazione route=hiking, quelli che l'app mostra)
+        if (/route_hiking_/.test(r[iW] || "")) segnati += m;
+      });
     }
-    return { punti, quote, dist, metri, su, giu, min: d.min ?? null, max: d.max ?? null, fondo };
+    return { punti, quote, dist, metri, su, giu, min: d.min ?? null, max: d.max ?? null, fondo, segnati };
   }
   /** Quote ridotte a "n" valori al massimo, per disegnare il profilo: [{m, q, i}] (m = metri dalla partenza) */
   function serieProfilo(perc, n) {

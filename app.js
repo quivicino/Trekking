@@ -1522,10 +1522,16 @@
     return { lat: +primo.lat, lon: +primo.lon, nome };
   }
 
-  async function calcolaPercorso(da, a, profilo) {
+  // Il profilo «hiking-mountain» di BRouter preferisce poco i sentieri segnati (route=hiking, quelli che l'app mostra):
+  // da Campodolcino a Motta passava quasi tutto fuori. Con hiking_routes_preference alto (i tratti fuori dai sentieri
+  // segnati costano 4 volte) il percorso sta sui sentieri. Se così BRouter non trova il percorso in tempo
+  // (succede tra punti lontani dai sentieri), si riprova con una preferenza più bassa e poi con quella normale.
+  const PREFERENZE_SENTIERI = [3, 1, null];
+  async function chiediBrouter(da, a, profilo, preferenza) {
     const url = "https://brouter.de/brouter?lonlats=" +
       `${da.lon.toFixed(6)},${da.lat.toFixed(6)}|${a.lon.toFixed(6)},${a.lat.toFixed(6)}` +
-      `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson`;
+      `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson` +
+      (preferenza != null ? "&profile:hiking_routes_preference=" + preferenza : "");
     const r = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
     const testo = await r.text();
     let dati = null;
@@ -1533,6 +1539,15 @@
     const p = dati && QT.leggiBrouter(dati);
     if (!p) throw new Error(testo.slice(0, 200) || "percorso non trovato");
     return p;
+  }
+  async function calcolaPercorso(da, a, profilo) {
+    const prove = profilo === "hiking-mountain" ? PREFERENZE_SENTIERI : [null];
+    let errore;
+    for (const pref of prove) {
+      try { return await chiediBrouter(da, a, profilo, pref); }
+      catch (e) { errore = e; console.warn("BRouter, preferenza sentieri " + pref, e); }
+    }
+    throw errore;
   }
 
   // Campi A e B: il testo scritto, oppure un punto preciso (scelto sulla mappa o da una scheda) in data-lat/data-lon
@@ -1627,8 +1642,9 @@
       $("pi-num").innerHTML = num.join("");
       const tot = p.fondo.sentiero + p.fondo.sterrata + p.fondo.strada;
       const pc = (x) => Math.round(x / tot * 100);
-      $("pi-fondo").innerHTML = tot ? [["sentiero", "sentieri", COLORE_PERCORSO], ["sterrata", "sterrate", "#b8873b"], ["strada", "strade", "#7a8291"]]
-        .filter(([k]) => p.fondo[k] / tot >= 0.01).map(([k, t, c]) => `<span><i style="background:${c}"></i>${t} ${pc(p.fondo[k])}%</span>`).join(" · ") : "";
+      const segnati = tot ? `<b>sui sentieri segnati ${pc(p.segnati || 0)}%</b><br>fondo: ` : "";
+      $("pi-fondo").innerHTML = segnati + (tot ? [["sentiero", "sentiero", COLORE_PERCORSO], ["sterrata", "sterrata", "#b8873b"], ["strada", "strada", "#7a8291"]]
+        .filter(([k]) => p.fondo[k] / tot >= 0.01).map(([k, t, c]) => `<span><i style="background:${c}"></i>${t} ${pc(p.fondo[k])}%</span>`).join(" · ") : "");
       disegnaProfilo(p);
     }
     posizionaAzioni();
