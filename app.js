@@ -1698,7 +1698,7 @@
   function aggiornaModoPercorso() {
     const p = percorsoAttivo();
     $("percorso-barra").hidden = !p;
-    $("percorso-info").hidden = !p;
+    $("percorso-info").hidden = !p || infoChiusa;
     $("btn-percorso").setAttribute("aria-pressed", String(!!p));
     if (p) {
       $("percorso-testo").textContent = `${p.daGps ? "Da qui" : p.da} → ${p.a} · ${QT.formattaKm(p.metri)}`;
@@ -1736,6 +1736,13 @@
     az.style.bottom = box.hidden ? "" : (box.offsetHeight + 26) + "px";
   }
   window.addEventListener("resize", posizionaAzioni);
+  // Croce del riquadro: lo chiude, il percorso resta sulla mappa; si riapre toccando la barra in alto
+  let infoChiusa = false;
+  $("btn-pi-chiudi").addEventListener("click", () => {
+    infoChiusa = true;
+    $("percorso-info").hidden = true;
+    posizionaAzioni();
+  });
 
   // ---------- Profilo altimetrico del percorso ----------
   // Tocca o trascina il dito sul profilo: un pallino mostra quel punto sulla mappa, con distanza e quota.
@@ -1819,6 +1826,7 @@
 
   // Avvia il percorso: la linea sulla mappa, il profilo in basso e la navigazione con la freccia
   function avviaPercorso(r, da, a, profilo) {
+    infoChiusa = false;
     stato.percorso = Object.assign(r, { da: da.nome, daGps: !!da.gps, a: a.nome, profilo });
     disegnaPercorso();
     aggiornaModoPercorso();
@@ -1880,6 +1888,8 @@
   $("btn-percorso").addEventListener("click", () => { if (!chiudiFormPercorso()) apriPercorso(); });
   $("btn-chiudi-form-percorso").addEventListener("click", chiudiFormPercorso);
   $("percorso-testo").addEventListener("click", () => {
+    // con il riquadro chiuso, il primo tocco lo riapre; poi apre il modulo per cambiare il percorso
+    if (infoChiusa) { infoChiusa = false; aggiornaModoPercorso(); inquadraPercorso(); return; }
     inquadraPercorso();
     apriPercorso();
   });
