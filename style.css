@@ -148,7 +148,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   flex: none; align-self: center; margin-left: 4px; min-height: 34px; padding: 0 13px; border-radius: 999px;
   border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 16px/1 var(--font-display);
 }
-.gr-testi span { font-size: 26px; line-height: 1.2; color: var(--testo); }
+.gr-testi span { font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--testo); }
 
 .fab-col {
   position: absolute; right: 16px; top: 16px; z-index: 900;
@@ -838,3 +838,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* con «+ non CAI» il testo di Cosa mostrare si accorcia invece di schiacciare la ricerca */
 .carb { max-width: 46%; }
 .cerca { min-width: 72px; }
+
+/* Riquadro del percorso: croce in alto a destra per chiuderlo (il percorso resta; si riapre toccando la barra in alto) */
+.pi-testa { display: flex; align-items: flex-start; gap: 6px; }
+.pi-testa .pi-num { flex: 1; min-width: 0; }
+.pi-chiudi {
+  flex: none; width: 36px; height: 36px; margin: -4px -4px 0 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; background: none; color: var(--testo-2);
+}
+/* Riquadro della freccia: croce in alto a destra al posto di «Esci» */
+.guida-rotta { padding-right: 52px; grid-template-areas: "b v" "b v" "t t"; }
+.guida-rotta .gr-esci {
+  position: absolute; top: 8px; right: 8px; grid-area: auto; width: 38px; height: 38px; min-height: 0; padding: 0; margin: 0;
+  display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--testo-2);
+}
