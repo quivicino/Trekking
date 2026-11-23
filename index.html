@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
   <div class="app">
@@ -36,11 +36,20 @@
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="cat-menu" id="cat-menu" role="group" aria-label="Cosa mostrare: puoi sceglierne più di uno" hidden>
-          <p class="cat-titolo">Sentieri <small>(per difficoltà)</small></p>
-          <div id="cat-sentieri"></div>
-          <label class="cat-voce"><input type="checkbox" id="mostra-numeri"><span id="numeri-segno"></span><span>Numero dei sentieri sulla mappa</span></label>
-          <p class="cat-titolo">Punti</p>
-          <div id="cat-voci"></div>
+          <details class="cat-sez" id="sez-cai">
+            <summary><span class="cat-sez-nome">Sentieri CAI <small>(segnati, per difficoltà)</small></span><span class="cat-conta" id="conta-cai"></span></summary>
+            <div id="cat-sentieri"></div>
+            <label class="cat-voce"><input type="checkbox" id="mostra-numeri"><span id="numeri-segno"></span><span>Numero dei sentieri sulla mappa</span></label>
+          </details>
+          <details class="cat-sez" id="sez-noncai">
+            <summary><span class="cat-sez-nome">Sentieri NON CAI <small>(su OpenStreetMap, senza segnavia)</small></span><span class="cat-conta" id="conta-noncai"></span></summary>
+            <div id="cat-noncai"></div>
+            <p class="cat-nota">Si vedono da vicino (zoom 13 o più). Se li scegli, anche il percorso a piedi può passarci.</p>
+          </details>
+          <details class="cat-sez" id="sez-punti">
+            <summary><span class="cat-sez-nome">Punti</span><span class="cat-conta" id="conta-punti"></span></summary>
+            <div id="cat-voci"></div>
+          </details>
           <button class="cat-ok" id="cat-ok" type="button">Fatto</button>
         </div>
       </div>
@@ -121,21 +130,21 @@
         <div class="percorso-opz">
           <label>Percorso
             <select id="perc-profilo">
-              <option value="hiking-mountain" selected>Sui sentieri</option>
+              <option value="hiking-mountain" selected>Sui sentieri scelti</option>
               <option value="shortest">Il più corto</option>
             </select>
           </label>
         </div>
         <p class="perc-errore" id="perc-errore" role="alert" hidden></p>
         <button class="btn-perc-vai" id="btn-perc-vai" type="submit">Calcola il percorso</button>
-        <p class="perc-nota">Percorso a piedi calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
+        <p class="perc-nota">Preferisce i sentieri CAI; quelli NON CAI valgono uguale solo se li hai accesi in «Cosa mostrare». Calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
       </form>
 
       <div class="percorso-info" id="percorso-info" hidden>
         <div class="pi-num" id="pi-num"></div>
         <div class="pi-profilo" id="pi-profilo" role="img" aria-label="Profilo altimetrico del percorso"></div>
+        <div class="pi-fondo" id="pi-fondo"></div>
         <div class="pi-sotto">
-          <span class="pi-fondo" id="pi-fondo"></span>
           <button class="pi-gpx" id="btn-perc-gpx" type="button">Salva GPX</button>
         </div>
       </div>
@@ -330,7 +339,7 @@
           <h3>I pulsanti</h3>
           <ul class="g-lista">
             <li><span class="g-segno"><span class="g-barra">Cerca un luogo…</span></span><div><b>Cerca</b>: scrivi un paese, una valle o un rifugio per vedere i sentieri lì invece che intorno a te.</div></li>
-            <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: spunta le difficoltà dei sentieri e i tipi di punti che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b>, le <b>sorgenti</b> (che spesso non sono potabili), i <b>bar e ristoranti</b> (solo quelli a meno di 300 metri da un sentiero) e le <b>funivie e seggiovie</b>. Sotto le difficoltà c'è <b>Numero dei sentieri sulla mappa</b>: toglilo dove i sentieri sono così fitti che i numeri coprono la mappa.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: tre sezioni che si aprono toccandole. <b>Sentieri CAI</b>: le difficoltà e il numero sulla mappa; <b>Sentieri NON CAI</b>: sentieri e sterrate di OpenStreetMap senza segnavia, tratteggiati, che si vedono da vicino (all'inizio spenti); <b>Punti</b>. Spunta quello che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b>, le <b>sorgenti</b> (che spesso non sono potabili), i <b>bar e ristoranti</b> (solo quelli a meno di 300 metri da un sentiero) e le <b>funivie e seggiovie</b>. Sotto le difficoltà c'è <b>Numero dei sentieri sulla mappa</b>: toglilo dove i sentieri sono così fitti che i numeri coprono la mappa.</div></li>
             <li><span class="g-segno"><span class="g-barra corto">15 km</span></span><div><b>Raggio</b>: quanto lontano cercare, da 2 a 25 km (di solito 15). Con un raggio grande in montagna i sentieri sono tanti e lo scaricamento è più lento.</div></li>
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti. All'avvio l'app riparte dall'ultima zona che guardavi: tocca qui per tornare dove sei.</div></li>
             <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i sentieri e i punti vicini e le impostazioni.</div></li>
@@ -350,11 +359,11 @@
             <b>segnaposto</b> accanto a ogni casella scegli il punto toccando la mappa. Nella scheda di un rifugio, bivacco o altro punto,
             <b>A piedi fin qui</b> lo mette come arrivo.</p>
           <ul class="g-lista">
-            <li><b>Sui sentieri</b> preferisce sentieri e mulattiere, anche di montagna; <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
+            <li><b>Sui sentieri scelti</b>: con i <b>sentieri NON CAI</b> spenti in <i>Cosa mostrare</i>, il percorso sta il più possibile sui <b>sentieri CAI</b> (quelli colorati sulla mappa), anche se così è più lungo; usa sentieri senza segnavia o strade solo dove non c'è altro modo. Con i NON CAI accesi, sentieri segnati e non segnati valgono uguale. Le difficoltà scelte non contano per il percorso. <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
             <li>Sulla mappa il percorso è una linea <b style="color:#d61f8c">fucsia</b> con <b>A</b> (partenza) e <b>B</b> (arrivo).</li>
             <li>In basso un riquadro dice lunghezza, salita, discesa, tempo stimato e quota minima e massima; sotto c'è il <b>profilo altimetrico</b>:
               tocca o trascina il dito sul profilo e un pallino ti mostra quel punto sulla mappa, con distanza dalla partenza e quota.</li>
-            <li>L'ultima riga dice quanta parte del percorso è su <b>sentieri</b>, su <b>sterrate</b> e su <b>strade</b>.
+            <li>Sotto il profilo ci sono i <b>sentieri usati</b>, nell'ordine, con il segnavia e i chilometri: toccane uno per aprire la sua scheda. Un riquadro giallo <b>⚠</b> avvisa quanti chilometri sono su <b>sentieri NON CAI</b>, senza segnavia: possono essere poco tracciati o chiusi.
               <b>Salva GPX</b> salva il percorso come file per un'altra app di navigazione.</li>
             <li>La freccia in alto a sinistra ti guida lungo il percorso, come su un sentiero. La barra in alto riassume il percorso: toccala per cambiarlo;
               la <b>X</b> (o <b>Esci</b> nel riquadro della freccia) chiude il percorso.</li>
@@ -439,9 +448,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=35"></script>
-  <script src="core.js?v=24"></script>
-  <script src="app.js?v=34"></script>
+  <script src="config.js?v=36"></script>
+  <script src="core.js?v=25"></script>
+  <script src="app.js?v=35"></script>
   <script src="installa.js?v=20"></script>
 
   <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com

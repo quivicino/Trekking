@@ -29,10 +29,17 @@
   };
   if (!RAGGI.includes(stato.raggio)) stato.raggio = 15000;
   const CHIAVI_DIFF = QT.ORDINE_DIFF.map((d) => "D" + d);
+  // Sentieri NON CAI: vie di OpenStreetMap che non fanno parte di un itinerario segnato (relazione route=hiking)
+  const NONCAI = {
+    NP: { nome: "Sentieri senza segnavia", spiega: "sentieri e scalinate", colore: "#7a4b25", highway: "path|bridleway|steps" },
+    NT: { nome: "Sterrate e mulattiere", spiega: "strade di campagna e forestali", colore: "#c08a3e", highway: "track" }
+  };
+  const CHIAVI_NONCAI = Object.keys(NONCAI);
+  const chiaveValida = (k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k) || CHIAVI_NONCAI.includes(k);
   const CATEGORIE_INIZIO = cfg.categorie || CHIAVI_DIFF.concat(["R", "B", "W"]);
   {
     const scelti = leggiPref("categorie", CATEGORIE_INIZIO.join(","));
-    stato.categorie = new Set(scelti.split(",").filter((k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k)));
+    stato.categorie = new Set(scelti.split(",").filter(chiaveValida));
   }
   if (!["distanza", "nome", "lunghezza"].includes(stato.ordine)) stato.ordine = "distanza";
 
@@ -51,7 +58,7 @@
   })();
   if (link) {
     if (RAGGI.includes(link.raggio)) stato.raggio = link.raggio;
-    if (link.categorie) stato.categorie = new Set(link.categorie.filter((k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k)));
+    if (link.categorie) stato.categorie = new Set(link.categorie.filter(chiaveValida));
     if (link.filtri) link.filtri.split(",").filter((f) => f === "cai" || f === "aperti").forEach((f) => stato.filtri.add(f));
     if (["distanza", "nome", "lunghezza"].includes(link.ordine)) stato.ordine = link.ordine;
     // l'indirizzo torna pulito: ricaricando la pagina si riparte dall'ultima posizione
@@ -106,6 +113,65 @@
     guida: L.layerGroup().addTo(mappa),   // linea tratteggiata da te al sentiero scelto
     io: L.layerGroup().addTo(mappa)
   };
+  // ---------- Sentieri NON CAI ----------
+  // Vie di OpenStreetMap (sentieri, scalinate, sterrate) che non fanno parte di un itinerario segnato: tratteggiate,
+  // sotto i sentieri CAI. Si chiedono a Overpass solo per la zona che si vede, da vicino (zoom 13 o più),
+  // a quadretti di 0,1° che restano in memoria finché l'app è aperta.
+  mappa.createPane("altri").style.zIndex = 390;   // sotto i sentieri (overlayPane = 400)
+  const telaAltri = L.canvas({ pane: "altri", padding: 0.3 });
+  livelli.altri = L.layerGroup().addTo(mappa);
+  const CELLA_ALTRI = 0.1, ZOOM_ALTRI = 13;
+  const celleAltri = new Map();   // "i_j" → { vie: [{h, g}] } oppure { attesa: Promise }
+  function queryAltri(s, w, n, e) {
+    const bb = `(${s.toFixed(3)},${w.toFixed(3)},${n.toFixed(3)},${e.toFixed(3)})`;
+    return `[out:json][timeout:40];way[highway~"^(path|bridleway|steps|track)$"]${bb}->.w;` +
+      `rel(bw.w)[route=hiking]->.r;way(r.r)->.in;(.w; - .in;);out tags geom${bb};`;
+  }
+  async function cellaAltri(i, j) {
+    const k = i + "_" + j;
+    const c = celleAltri.get(k);
+    if (c) return c.attesa || c;
+    const attesa = (async () => {
+      const s = i * CELLA_ALTRI, w = j * CELLA_ALTRI, q = queryAltri(s, w, s + CELLA_ALTRI, w + CELLA_ALTRI);
+      for (const url of cfg.overpass || []) {
+        try {
+          const d = await fetchJson(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) }, 60000);
+          const vie = (d.elements || []).filter((x) => x.type === "way" && x.geometry)
+            .map((x) => ({ h: x.tags.highway === "track" ? "NT" : "NP", g: x.geometry.filter(Boolean).map((p) => [p.lat, p.lon]) }));
+          const fatto = { vie };
+          celleAltri.set(k, fatto);
+          return fatto;
+        } catch (e) { console.warn("Sentieri NON CAI", url, e); }
+      }
+      celleAltri.delete(k);
+      return { vie: [] };
+    })();
+    celleAltri.set(k, { attesa });
+    return attesa;
+  }
+  let giroAltri = 0;
+  async function caricaAltri() {
+    const scelti = CHIAVI_NONCAI.filter((k) => stato.categorie.has(k));
+    const giro = ++giroAltri;
+    if (!scelti.length || mappa.getZoom() < ZOOM_ALTRI) { livelli.altri.clearLayers(); return; }
+    const b = mappa.getBounds();
+    const celle = [];
+    for (let i = Math.floor(b.getSouth() / CELLA_ALTRI); i <= Math.floor(b.getNorth() / CELLA_ALTRI); i++)
+      for (let j = Math.floor(b.getWest() / CELLA_ALTRI); j <= Math.floor(b.getEast() / CELLA_ALTRI); j++) celle.push([i, j]);
+    if (celle.length > 6) return;   // troppo lontano
+    // un quadretto alla volta: i server di Overpass rifiutano troppe richieste insieme
+    const risultati = [];
+    for (const [i, j] of celle) risultati.push(await cellaAltri(i, j));
+    if (giro !== giroAltri) return;
+    livelli.altri.clearLayers();
+    for (const r of risultati) for (const v of r.vie) {
+      if (!scelti.includes(v.h) || v.g.length < 2) continue;
+      L.polyline(v.g, { renderer: telaAltri, color: "#ffffff", weight: 5, opacity: .7, interactive: false }).addTo(livelli.altri);
+      L.polyline(v.g, { renderer: telaAltri, color: NONCAI[v.h].colore, weight: 3, dashArray: "6 5", interactive: false }).addTo(livelli.altri);
+    }
+  }
+  mappa.on("moveend", () => { if (CHIAVI_NONCAI.some((k) => stato.categorie.has(k))) caricaAltri(); });
+
   const markerPerId = new Map();
   const lineePerId = new Map();   // id sentiero → { linee: [...], bordo: [...], etichetta }
   mappa.on("dragstart", () => { stato.seguiGps = false; });
@@ -1522,10 +1588,16 @@
     return { lat: +primo.lat, lon: +primo.lon, nome };
   }
 
-  async function calcolaPercorso(da, a, profilo) {
+  // Il profilo «hiking-mountain» di BRouter preferisce poco i sentieri segnati (route=hiking, quelli che l'app mostra):
+  // da Campodolcino a Motta passava quasi tutto fuori. Con hiking_routes_preference alto (i tratti fuori dai sentieri
+  // segnati costano 4 volte) il percorso sta sui sentieri. Se così BRouter non trova il percorso in tempo
+  // (succede tra punti lontani dai sentieri), si riprova con una preferenza più bassa e poi con quella normale.
+  const PREFERENZE_SENTIERI = [3, 1, null];
+  async function chiediBrouter(da, a, profilo, preferenza, extra) {
     const url = "https://brouter.de/brouter?lonlats=" +
       `${da.lon.toFixed(6)},${da.lat.toFixed(6)}|${a.lon.toFixed(6)},${a.lat.toFixed(6)}` +
-      `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson`;
+      `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson` +
+      (preferenza != null ? "&profile:hiking_routes_preference=" + preferenza : "") + (extra || "");
     const r = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
     const testo = await r.text();
     let dati = null;
@@ -1533,6 +1605,17 @@
     const p = dati && QT.leggiBrouter(dati);
     if (!p) throw new Error(testo.slice(0, 200) || "percorso non trovato");
     return p;
+  }
+  // Con i sentieri NON CAI accesi in «Cosa mostrare» il profilo resta quello normale: sentieri segnati e non segnati alla pari
+  const conNonCai = () => CHIAVI_NONCAI.some((k) => stato.categorie.has(k));
+  async function calcolaPercorso(da, a, profilo) {
+    const prove = profilo === "hiking-mountain" && !conNonCai() ? PREFERENZE_SENTIERI : [null];
+    let errore;
+    for (const pref of prove) {
+      try { return await chiediBrouter(da, a, profilo, pref); }
+      catch (e) { errore = e; console.warn("BRouter, preferenza sentieri " + pref, e); }
+    }
+    throw errore;
   }
 
   // Campi A e B: il testo scritto, oppure un punto preciso (scelto sulla mappa o da una scheda) in data-lat/data-lon
@@ -1625,10 +1708,23 @@
       num.push(`<span>${QT.formattaOre(tempoPercorso(p))} <small>stima</small></span>`);
       if (p.min != null) num.push(`<small>quota ${p.min}–${QT.formattaQuota(p.max)}</small>`);
       $("pi-num").innerHTML = num.join("");
-      const tot = p.fondo.sentiero + p.fondo.sterrata + p.fondo.strada;
-      const pc = (x) => Math.round(x / tot * 100);
-      $("pi-fondo").innerHTML = tot ? [["sentiero", "sentieri", COLORE_PERCORSO], ["sterrata", "sterrate", "#b8873b"], ["strada", "strade", "#7a8291"]]
-        .filter(([k]) => p.fondo[k] / tot >= 0.01).map(([k, t, c]) => `<span><i style="background:${c}"></i>${t} ${pc(p.fondo[k])}%</span>`).join(" · ") : "";
+      // Sentieri usati, nell'ordine (tocca per aprire la scheda), e avviso per i tratti fuori dai sentieri CAI
+      const u = QT.sentieriUsati(p, p.sentieri || stato.sentieri);
+      p.usati = u.usati;
+      const kmCorti = (m) => QT.formattaDistanza(m);
+      const righe = [];
+      righe.push(u.usati.length
+        ? `<div class="pi-usati"><span class="pi-etic">Sentieri usati</span>${u.usati.map((x, i) =>
+          `<button type="button" class="pi-sent" data-i="${i}">${segnavia(x.s, 22)}<span>${esc(x.s.r || QT.titoloSentiero(x.s))}</span><small>${kmCorti(x.metri)}</small></button>`).join("")}</div>`
+        : '<p class="pi-avviso">Nessun sentiero CAI dell\'app su questo percorso.</p>');
+      if (u.segnatiAltri >= 80) righe.push(`<p class="pi-nota">e ${kmCorti(u.segnatiAltri)} su altri sentieri segnati, fuori dalla zona caricata</p>`);
+      const nonCai = u.fuori.sentiero + u.fuori.sterrata;
+      if (nonCai >= 150) {
+        righe.push(`<p class="pi-avviso">⚠ ${kmCorti(nonCai)} su sentieri NON CAI (senza segnavia)` +
+          (u.fuori.strada >= 50 ? `, ${kmCorti(u.fuori.strada)} su strada` : "") +
+          ": possono essere poco tracciati, difficili o chiusi. Controlla sul posto.</p>");
+      } else if (nonCai + u.fuori.strada >= 50) righe.push(`<p class="pi-nota">${kmCorti(nonCai + u.fuori.strada)} fuori dai sentieri, su strade e vie di paese per collegarli</p>`);
+      $("pi-fondo").innerHTML = righe.join("");
       disegnaProfilo(p);
     }
     posizionaAzioni();
@@ -1706,6 +1802,21 @@
     aggiornaModoPercorso();
   }
 
+  // Sentieri dell'app lungo tutto il percorso (anche fuori dal raggio caricato), dalle tessere del sito
+  async function sentieriLungoPercorso(p) {
+    try {
+      const ind = await leggiIndice();
+      if (!ind || !ind.tessere) return null;
+      const passo = ind.passo || 0.1, nomi = new Set();
+      p.punti.forEach(([la, lo]) => {
+        for (const d of [-0.002, 0.002]) nomi.add(`t_${Math.floor((la + d) / passo)}_${Math.floor((lo + d) / passo)}.json`);
+      });
+      const r = await daTessere("", new Set(ind.tessere), [...nomi]);
+      const visti = new Set(r.sentieri.map((x) => x.i));
+      return r.sentieri.concat(stato.sentieri.filter((x) => !visti.has(x.i)));
+    } catch (e) { console.warn("Sentieri lungo il percorso", e); return null; }
+  }
+
   // Avvia il percorso: la linea sulla mappa, il profilo in basso e la navigazione con la freccia
   function avviaPercorso(r, da, a, profilo) {
     stato.percorso = Object.assign(r, { da: da.nome, daGps: !!da.gps, a: a.nome, profilo });
@@ -1714,6 +1825,11 @@
     chiudiAnteprima();
     stato.seguiGps = false;
     // per la freccia il percorso è un "sentiero" con una sola linea, già disegnato qui
+    sentieriLungoPercorso(r).then((lista) => {
+      if (!lista || stato.percorso !== r) return;
+      r.sentieri = lista;
+      aggiornaModoPercorso();
+    });
     stato.percorso.sentiero = { i: "percorso", percorso: true, g: [r.punti], d: "ND", l: r.metri, n: da.nome + " → " + a.nome };
     scegliSentiero(stato.percorso.sentiero);
     inquadraPercorso();
@@ -1771,6 +1887,11 @@
   $("btn-perc-inverti").addEventListener("click", () => {
     const da = puntoCampo("perc-da"), a = puntoCampo("perc-a");
     impostaCampo("perc-da", a); impostaCampo("perc-a", da);
+  });
+  $("pi-fondo").addEventListener("click", (e) => {
+    const b = e.target.closest(".pi-sent");
+    const p = percorsoAttivo();
+    if (b && p && p.usati && p.usati[+b.dataset.i]) mostraSentiero(p.usati[+b.dataset.i].s);
   });
   $("btn-perc-gpx").addEventListener("click", () => {
     const p = percorsoAttivo();
@@ -1942,6 +2063,9 @@
   $("cat-sentieri").innerHTML = QT.ORDINE_DIFF.map((d) =>
     `<label class="cat-voce"><input type="checkbox" value="D${d}"${stato.categorie.has("D" + d) ? " checked" : ""}>` +
     `${pastiglia(d)}<span>${esc(QT.DIFFICOLTA[d].nome)}</span></label>`).join("");
+  $("cat-noncai").innerHTML = Object.entries(NONCAI).map(([k, t]) =>
+    `<label class="cat-voce"><input type="checkbox" value="${k}"${stato.categorie.has(k) ? " checked" : ""}>` +
+    `<span class="linea-noncai" style="--colore:${t.colore}"></span><span>${esc(t.nome)}<br><small>${esc(t.spiega)}</small></span></label>`).join("");
   $("cat-voci").innerHTML = Object.entries(QT.TIPI).map(([k, t]) =>
     `<label class="cat-voce"><input type="checkbox" value="${k}"${stato.categorie.has(k) ? " checked" : ""}>` +
     `<span class="mk tipo-${k}">${SIMBOLO[k]}</span><span>${esc(t.plurale)}</span></label>`).join("");
@@ -1954,7 +2078,12 @@
     if (diff.length === CHIAVI_DIFF.length && punti.length) { /* già scritto */ }
     else if (punti.length === 1) parti.push(BREVE[punti[0]]);
     else if (punti.length) parti.push(punti.length + " punti");
+    const altri = CHIAVI_NONCAI.filter((k) => stato.categorie.has(k));
+    if (altri.length) parti.push("non CAI");
     $("categoria-testo").textContent = parti.length ? parti.join(" + ") : "Nessuno";
+    // quanti sono scelti in ciascuna sezione del menu
+    [["conta-cai", diff.length, CHIAVI_DIFF.length], ["conta-noncai", altri.length, CHIAVI_NONCAI.length], ["conta-punti", punti.length, Object.keys(QT.TIPI).length]]
+      .forEach(([id, n, tot]) => { const el = $(id); el.textContent = n + "/" + tot; el.classList.toggle("attiva", n > 0); });
   }
   scriviCategorie();
   function cambiaCategoria(e) {
@@ -1962,9 +2091,10 @@
     if (e.target.checked) stato.categorie.add(k); else stato.categorie.delete(k);
     salvaPref("categorie", [...stato.categorie].join(","));
     scriviCategorie();
-    ricalcola();
+    if (CHIAVI_NONCAI.includes(k)) caricaAltri(); else ricalcola();
   }
   $("cat-sentieri").addEventListener("change", cambiaCategoria);
+  $("cat-noncai").addEventListener("change", cambiaCategoria);
   // Numero dei sentieri (segnavia) sulla mappa: dove i sentieri sono fitti si può spegnere; resta salvato sul telefono
   $("numeri-segno").innerHTML = QT.svgSimbolo(QT.SIMBOLO_CAI, 28, "123");
   $("mostra-numeri").checked = mostraNumeri;

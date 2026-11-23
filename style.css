@@ -802,3 +802,39 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .pop-vai.pop-apiedi { background: var(--superficie); color: var(--percorso); border: 2px solid var(--percorso); }
 @media (prefers-reduced-motion: reduce) { .percorso { animation: none; } }
+
+/* ---- Menu «Cosa mostrare» in tre sezioni che si aprono e chiudono ---- */
+.cat-sez { border-radius: 12px; }
+.cat-sez + .cat-sez { margin-top: 6px; border-top: 1px solid var(--bordo); padding-top: 6px; }
+.cat-sez > summary {
+  display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px; border-radius: 10px;
+  list-style: none; cursor: pointer; font: 700 17px/1.2 var(--font-display);
+}
+.cat-sez > summary::-webkit-details-marker { display: none; }
+.cat-sez > summary::before {
+  content: ""; flex: none; width: 9px; height: 9px; margin: 0 4px 0 2px;
+  border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s;
+}
+.cat-sez[open] > summary::before { transform: rotate(45deg); }
+.cat-sez-nome { flex: 1; min-width: 0; }
+.cat-sez-nome small { display: block; font: 500 13px/1.2 var(--font-body); color: var(--testo-2); }
+.cat-conta { flex: none; min-width: 26px; padding: 3px 7px; border-radius: 999px; text-align: center; background: var(--bg); color: var(--testo-2); font: 700 14px/1 var(--font-body); }
+.cat-conta.attiva { background: var(--blu); color: var(--su-colore); }
+.cat-nota { margin: 4px 8px 6px; font-size: 13px; color: var(--testo-2); }
+.linea-noncai { flex: none; width: 30px; height: 0; border-top: 4px dashed var(--colore); }
+/* Sentieri usati dal percorso e avviso per i tratti NON CAI */
+.pi-fondo { font-size: 13px; color: var(--testo-2); }
+.pi-usati { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; max-height: 76px; overflow-y: auto; }
+.pi-etic { font-weight: 600; margin-right: 2px; }
+.pi-sent {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 8px 2px 4px; border-radius: 999px;
+  border: 1px solid var(--bordo); background: var(--bg); color: var(--testo); font: 600 13px/1 var(--font-body);
+}
+.pi-sent svg { flex: none; }
+.pi-sent small { font-weight: 500; color: var(--testo-2); }
+.pi-avviso { margin: 4px 0 0; padding: 5px 8px; border-radius: 8px; background: #fff3d6; color: #6b4a00; font-weight: 600; line-height: 1.3; }
+.pi-nota { margin: 3px 0 0; }
+.pi-sotto { justify-content: flex-end; margin-top: 4px; }
+/* con «+ non CAI» il testo di Cosa mostrare si accorcia invece di schiacciare la ricerca */
+.carb { max-width: 46%; }
+.cerca { min-width: 72px; }

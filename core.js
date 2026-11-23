@@ -936,12 +936,32 @@
     const giu = su != null && q0 != null && q1 != null ? Math.max(0, Math.round(su + q0 - q1)) : d.giu ?? null;
     // metri per tipo di fondo, dai "messages" (Distance = metri del tratto, WayTags)
     const fondo = { sentiero: 0, sterrata: 0, strada: 0 };
+    let segnati = 0;
     const msg = pr.messages;
+    // per ogni punto, il tipo del tratto che finisce lì: { f: fondo, s: sentiero segnato }
+    const tratti = new Array(punti.length).fill(null);
+    if (Array.isArray(msg) && msg.length > 1) {
+      const iLo = msg[0].indexOf("Longitude"), iLa = msg[0].indexOf("Latitude"), iW0 = msg[0].indexOf("WayTags");
+      if (iLo >= 0 && iLa >= 0 && iW0 >= 0) {
+        // ogni riga dei messages finisce in un punto della traccia (coordinate × 1.000.000)
+        let r = 1;
+        for (let i = 1; i < c.length && r < msg.length; i++) {
+          const riga = msg[r];
+          tratti[i] = { f: fondoDaTag(riga[iW0]), s: /route_hiking_/.test(riga[iW0] || "") };
+          if (Math.abs(Math.round(c[i][0] * 1e6) - +riga[iLo]) <= 2 && Math.abs(Math.round(c[i][1] * 1e6) - +riga[iLa]) <= 2) r++;
+        }
+      }
+    }
     if (Array.isArray(msg) && msg.length > 1) {
       const iD = msg[0].indexOf("Distance"), iW = msg[0].indexOf("WayTags");
-      if (iD >= 0 && iW >= 0) msg.slice(1).forEach((r) => { fondo[fondoDaTag(r[iW])] += +r[iD] || 0; });
+      if (iD >= 0 && iW >= 0) msg.slice(1).forEach((r) => {
+        const m = +r[iD] || 0;
+        fondo[fondoDaTag(r[iW])] += m;
+        // tratti che fanno parte di un sentiero segnato (relazione route=hiking, quelli che l'app mostra)
+        if (/route_hiking_/.test(r[iW] || "")) segnati += m;
+      });
     }
-    return { punti, quote, dist, metri, su, giu, min: d.min ?? null, max: d.max ?? null, fondo };
+    return { punti, quote, dist, metri, su, giu, min: d.min ?? null, max: d.max ?? null, fondo, segnati, tratti };
   }
   /** Quote ridotte a "n" valori al massimo, per disegnare il profilo: [{m, q, i}] (m = metri dalla partenza) */
   function serieProfilo(perc, n) {
@@ -956,13 +976,60 @@
     return out;
   }
 
+
+  /**
+   * Sentieri usati dal percorso, nell'ordine: per ogni tratto il sentiero dell'app più vicino (entro "soglia" metri).
+   * sentieri: [{i, g, ...}] dell'app. Restituisce { usati: [{s, metri}], fuori: {sentiero, sterrata, strada}, segnatiAltri }:
+   * "fuori" = metri non su un sentiero dell'app né su un sentiero segnato, per fondo; "segnatiAltri" = metri su sentieri
+   * segnati per BRouter ma non tra quelli caricati nell'app.
+   */
+  function sentieriUsati(perc, sentieri, soglia) {
+    soglia = soglia || 30;
+    const CELLA = 0.003, griglia = new Map();
+    const chiave = (la, lo) => Math.floor(la / CELLA) + "_" + Math.floor(lo / CELLA);
+    for (const s of sentieri || []) for (const l of s.g || []) for (let i = 1; i < l.length; i++) {
+      const a = l[i - 1], b = l[i];
+      const ks = new Set([chiave(a[0], a[1]), chiave(b[0], b[1]), chiave((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)]);
+      for (const k of ks) { if (!griglia.has(k)) griglia.set(k, []); griglia.get(k).push([s, a, b]); }
+    }
+    const vicino = (la, lo) => {
+      let best = null, bd = soglia;
+      const i0 = Math.floor(la / CELLA), j0 = Math.floor(lo / CELLA);
+      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+        for (const [s, a, b] of griglia.get((i0 + di) + "_" + (j0 + dj)) || []) {
+          const d = distanzaSegmento(la, lo, a, b).d;
+          if (d < bd) { bd = d; best = s; }
+        }
+      }
+      return best;
+    };
+    const usati = [], perId = new Map(), fuori = { sentiero: 0, sterrata: 0, strada: 0 };
+    let segnatiAltri = 0, ultimo = null;
+    for (let i = 1; i < perc.punti.length; i++) {
+      const m = perc.dist[i] - perc.dist[i - 1];
+      if (!(m > 0)) continue;
+      const p = perc.punti[i - 1], q = perc.punti[i];
+      const s = vicino((p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+      const t = perc.tratti && perc.tratti[i];
+      if (s) {
+        let u = perId.get(s.i);
+        if (!u) { u = { s, metri: 0 }; perId.set(s.i, u); usati.push(u); }
+        u.metri += m;
+        ultimo = u;
+      } else if (t && t.s) segnatiAltri += m;
+      else fuori[(t && t.f) || "strada"] += m;
+    }
+    // i sentieri toccati solo per pochi metri (un incrocio) non contano
+    return { usati: usati.filter((u) => u.metri >= 80), fuori, segnatiAltri };
+  }
+
   const API = {
     distanza, formattaDistanza, formattaKm, formattaQuota, formattaOre, DIFFICOLTA, ORDINE_DIFF, difficolta,
     TIPI, RAGGIO_RISTORO, SOLO_VICINO, RAGGIO_WEBCAM, linkWebcam, associaWebcam, LOCALI, IMPIANTI, durataCorsa, tipoDaTag, compatta, distanzaDaTraccia, vicinoAiSentieri, leggiSimbolo, svgSimbolo, SIMBOLO_CAI, unisciTratti, lunghezzaLinea, metriDaTag, minutiDaTag,
     compattaSentiero, puntoPiuVicino, rotta, scartoRotte, puntoCardinale, guidaSentiero, estremita, campioni, dislivello, tempoStimato, caiCoerente, titoloSentiero, sottotitoloSentiero,
     leggiOrari, statoApertura, testoApertura, orariLeggibili, riquadro, queryOverpass, leggiRisposta,
     preparaPunti, prepareSentieri, capitalizza, nomeTipo, titolo,
-    daMercatore, tracciaWmt, capiPercorso, fileTraccia, nomeFile, FORMATI, fondoDaTag, leggiBrouter, serieProfilo
+    daMercatore, tracciaWmt, capiPercorso, fileTraccia, nomeFile, FORMATI, fondoDaTag, leggiBrouter, serieProfilo, sentieriUsati
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   else root.QT = API;
