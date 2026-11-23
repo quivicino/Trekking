@@ -1,8 +1,8 @@
-/* Qui-Trekking – stesso aspetto di Qui-Pets e Distributori: mappa a tutto schermo con pulsanti tondi,
-   l'elenco è una pagina a tutto schermo. Barra verde bosco, sentieri colorati per difficoltà. */
+/* Layout: mappa a tutto schermo con pulsanti tondi a destra; l'elenco è una pagina a tutto schermo.
+   Palette ispirata alla segnaletica stradale italiana: blu del cartello "P". */
 :root {
-  --blu: #2f6b2a;
-  --blu-scuro: #22521e;
+  --blu: #1b4f9c;
+  --blu-scuro: #143c78;
   --libero: #15805a;
   --attenzione: #b87900;
   --pieno: #c23a2f;
@@ -18,17 +18,19 @@
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r: 14px;
   --su-colore: #ffffff;
-  --barra: #2d5a27;
-  /* colori dei tipi di punto */
-  --t-R: #b5442c; --t-B: #7a5a3a; --t-W: #1f86d0; --t-S: #10a3a3; --t-C: #c2711a; --t-F: #34424f;
-  /* difficoltà CAI dei sentieri */
-  --d-T: #2fa84f; --d-E: #e0a000; --d-EE: #e2311d; --d-EEA: #1b1b1b; --d-EAI: #7b3fc4; --d-ND: #8a8f99;
+  --barra: #1b4f9c;
+  /* colori dei segnaposto per tipo di parcheggio */
+  --t-aperto: #1b4f9c;
+  --t-multipiano: #6a3aa8;
+  --t-garage: #0d7377;
+  --t-strada: #a8541a;
+  --t-disabili: #b0306f;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --blu: #8fd27f;
-    --blu-scuro: #74b964;
+    --blu: #4f86dc;
+    --blu-scuro: #3a6fc2;
     --libero: #3fbf8a;
     --attenzione: #e3a82d;
     --pieno: #ec6a5f;
@@ -41,7 +43,12 @@
     --bordo: #2a3650;
     --ombra: 0 6px 24px rgba(0, 0, 0, .45);
     --su-colore: #0c1220;
-    --barra: #1d3b19;
+    --barra: #19386a;
+    --t-aperto: #4f86dc;
+    --t-multipiano: #9a72d6;
+    --t-garage: #2fa8a6;
+    --t-strada: #d98545;
+    --t-disabili: #e0679f;
     color-scheme: dark;
   }
   .mappa:not(.satellite) .leaflet-tile-pane { filter: brightness(.72) contrast(1.1) saturate(.7); }
@@ -70,11 +77,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   z-index: 1000;
 }
 .brand { display: flex; align-items: center; gap: 8px; flex: none; }
-/* Logo quadrato alto quanto tutta la barra (38 px di contenuto + 8 + 8 di margine) */
+/* Logo quadrato da 50 px: quasi alto quanto la barra blu (54 px), con 2 px liberi sopra e sotto */
 .logo { display: block; width: 50px; height: 50px; margin: -6px 0; }
 .brand-name { font: 700 20px/1 var(--font-display); letter-spacing: .01em; }
 .cerca { flex: 1; min-width: 0; }
-.cerca input, .raggio select, .cat-btn {
+.cerca input, .raggio select {
   width: 100%; height: 38px; border: 0; border-radius: 10px;
   padding: 0 12px; font: 500 15px var(--font-body);
   background: rgba(255,255,255,.16); color: #fff;
@@ -83,72 +90,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cerca input:focus, .raggio select:focus { background: #fff; color: #172033; outline: none; }
 .raggio select { width: auto; padding-right: 8px; font-variant-numeric: tabular-nums; }
 .raggio select option { color: #172033; }
-/* Cosa mostrare: pulsante che apre una lista di caselle (si possono scegliere più tipi) */
-.carb { position: relative; min-width: 0; }
-.cat-btn {
-  display: flex; align-items: center; gap: 6px; width: auto; max-width: 100%;
-  font-weight: 700; white-space: nowrap; cursor: pointer;
-}
-.cat-btn #categoria-testo { overflow: hidden; text-overflow: ellipsis; }
-.cat-btn svg { flex: none; }
-.cat-menu {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 2000;
-  width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 120px); overflow-y: auto;
-  padding: 8px; border-radius: 14px; background: var(--superficie); color: var(--testo); box-shadow: var(--ombra);
-}
-.cat-titolo { margin: 4px 8px 8px; font: 700 17px/1.2 var(--font-display); }
-.cat-titolo small { font: 500 13px var(--font-body); color: var(--testo-2); }
-.cat-voce {
-  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 8px; border-radius: 10px;
-  font: 500 16px/1.2 var(--font-body); cursor: pointer;
-}
-.cat-voce:has(input:checked) { background: var(--bg); }
-.cat-voce input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--blu); }
-.cat-voce .mk { position: static; transform: none; flex: none; }
-.cat-ok {
-  display: block; width: 100%; margin-top: 8px; min-height: 44px; border: 0; border-radius: 10px;
-  background: var(--blu); color: #fff; font: 700 17px/1 var(--font-display); letter-spacing: .04em; cursor: pointer;
-}
-@media (max-width: 480px) {
-  .topbar { gap: 8px; padding-left: 12px; padding-right: 12px; }
-  .raggio select, .cat-btn { padding: 0 6px; }
-}
 @media (max-width: 480px) { .brand-name { display: none; } }
 
 /* ---- Corpo ---- */
 .corpo { position: relative; flex: 1; min-height: 0; }
 .mappa { position: absolute; inset: 0; background: var(--bg); }
 .versione { margin: 0; font-size: 12px; color: var(--testo-2); }
-
-/* Velocità e freccia per restare sul sentiero scelto */
-.guida-rotta {
-  position: absolute; left: 12px; top: calc(12px + 12vh); z-index: 900; max-width: calc(100% - 100px);
-  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "b v" "b e" "t t";
-  align-items: center; column-gap: 14px; row-gap: 8px; padding: 10px 16px 12px 10px;
-  border-radius: var(--r); box-shadow: var(--ombra); color: var(--testo);
-  background: color-mix(in srgb, var(--superficie) 50%, transparent);
-}
-.guida-rotta[hidden] { display: none; }
-.guida-rotta .gr-bussola { grid-area: b; }
-.guida-rotta .gr-testi { display: contents; }
-.guida-rotta .gr-testi b { grid-area: v; }
-.guida-rotta .gr-testi span { grid-area: t; text-shadow: 0 0 6px var(--superficie); }
-.guida-rotta .gr-esci { grid-area: e; justify-self: start; margin-left: 0; }
-.gr-bussola {
-  position: relative; flex: none; width: 116px; height: 116px; border-radius: 50%;
-  display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 60%, transparent); color: var(--libero);
-}
-.guida-rotta.fuori .gr-bussola { color: #2f7cf6; }
-.gr-nord { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font: 700 20px/1 var(--font-body); color: var(--testo-2); }
-.gr-freccia { width: 80px; height: 80px; }
-.gr-freccia { transition: transform .4s ease-out; }
-.gr-testi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gr-testi b { font: 700 26px/1 var(--font-display); font-variant-numeric: tabular-nums; }
-.gr-esci {
-  flex: none; align-self: center; margin-left: 4px; min-height: 34px; padding: 0 13px; border-radius: 999px;
-  border: 2px solid var(--pieno); background: var(--superficie); color: var(--pieno); font: 700 16px/1 var(--font-display);
-}
-.gr-testi span { font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--testo); }
 
 .fab-col {
   position: absolute; right: 16px; top: 16px; z-index: 900;
@@ -161,14 +108,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--superficie); color: var(--blu); box-shadow: var(--ombra);
 }
 .fab-nero { background: #111418; color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.85), var(--ombra); }
+.fab-sx {
+  position: absolute; left: 16px; top: 16px; z-index: 900;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
 .fab-azioni {
   position: absolute; left: 16px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 900;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
 }
 .fab-verde { width: 60px; height: 60px; background: var(--libero); color: var(--su-colore); }
 .fab-rosso { width: 60px; height: 60px; background: var(--pieno); color: var(--su-colore); --rosso-icona: var(--pieno); }
-.fab-blu { width: 60px; height: 60px; background: var(--blu); color: var(--su-colore); }
-.fab-verde .euro { font: 700 30px/1 var(--font-display); }
 .fab:disabled { opacity: .5; cursor: default; }
 .badge {
   position: absolute; top: -4px; right: -4px;
@@ -204,7 +153,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   width: 44px; height: 44px; border-radius: 50%; border: 0;
   display: grid; place-items: center; background: var(--bg); color: var(--testo);
 }
-.pannello-corpo > * { flex-shrink: 0; }
 .pannello-corpo {
   flex: 1; min-height: 0; overflow-y: auto;
   display: flex; flex-direction: column; gap: 14px;
@@ -218,6 +166,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   padding: 10px 12px; border-radius: 10px; background: var(--bg);
   position: relative;
 }
+.auto span { font: 700 15px/1 var(--font-display); letter-spacing: .06em; }
 /* Occhio verde al centro della riga AUTO-REFRESH: schermo sempre acceso */
 .auto .occhio {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -225,13 +174,33 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--libero); color: #fff; pointer-events: none;
 }
 .auto .occhio[hidden] { display: none; }
-.auto span { font: 700 15px/1 var(--font-display); letter-spacing: .06em; }
 .auto select {
   height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--bordo);
   background: var(--superficie); color: var(--testo); font: 600 15px var(--font-body);
   font-variant-numeric: tabular-nums;
 }
 .segn-box { display: flex; align-items: center; gap: 4px; }
+/* ZTL: piccola etichetta sul segnaposto dei parcheggi dentro una ZTL o in Area C */
+.mk, .icona { position: relative; }
+.mk.in-ztl::before, .mk.in-areac::before, .icona.in-ztl::before, .icona.in-areac::before {
+  content: "ZTL"; position: absolute; top: -10px; right: -12px;
+  padding: 1px 3px; border-radius: 4px; border: 1.5px solid #fff;
+  font: 700 10px/1.1 var(--font-body); letter-spacing: .02em; color: #fff; background: var(--pieno);
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+.mk.in-areac::before, .icona.in-areac::before { content: "C"; background: var(--attenzione); }
+.icona.in-ztl::before, .icona.in-areac::before { top: -6px; right: -8px; }
+.mk.varco {
+  width: 16px; height: 16px; border-radius: 50%; font-size: 0;
+  background: var(--pieno); border: 2px solid #fff;
+}
+.mk.varco::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #fff; }
+.tag.ztl { color: #fff; background: var(--pieno); padding: 0 5px; border-radius: 4px; }
+.tag.area-c { color: #fff; background: var(--attenzione); padding: 0 5px; border-radius: 4px; }
+.pop .avviso { color: var(--pieno); font-weight: 600; }
+.pop .fonte { font-size: 14px; }
+.g-area { display: block; width: 56px; height: 34px; border-radius: 6px; border: 2px solid var(--pieno); background: color-mix(in srgb, var(--pieno) 14%, transparent); }
+.g-area.c { border-style: dashed; border-color: var(--attenzione); background: transparent; }
 .segn-box .mk.segn { position: relative; flex: none; }
 .segn-eta {
   font: 700 12px/1 var(--font-body); font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -239,6 +208,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: var(--superficie); color: var(--libero); box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
 .stato.errore { color: var(--pieno); font-weight: 600; }
+.nota-schermo { margin: -6px 0 0; font-size: 13px; color: var(--pieno); }
+.pannello-corpo > * { flex-shrink: 0; }
 
 .sommario { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .kpi {
@@ -250,7 +221,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .kpi-reale b { color: var(--libero); }
 .kpi-segn b { color: var(--libero); }
 .kpi-osm b { color: var(--blu); }
-.kpi small { font: 600 13px var(--font-body); }
 
 .btn {
   height: 46px; border-radius: 12px; border: 0;
@@ -262,12 +232,47 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn:disabled { opacity: .5; cursor: default; }
 
 .filtri { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Menu a discesa dei filtri, nella barra in alto (scelte multiple) */
+.filtri-menu { position: relative; flex: none; }
+.filtri-btn {
+  position: relative; width: 42px; height: 38px; border: 0; border-radius: 10px;
+  display: grid; place-items: center; background: rgba(255,255,255,.16); color: #fff;
+}
+.filtri-btn[aria-expanded="true"], .filtri-btn.attivi { background: #fff; color: var(--blu); }
+.filtri-num {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px;
+  background: var(--attenzione); color: #fff; border: 2px solid var(--barra);
+  font: 700 11px/14px var(--font-body); text-align: center;
+}
+.filtri-lista {
+  position: absolute; top: calc(100% + 10px); right: -60px; z-index: 1300;
+  width: 290px; max-height: calc(100vh - 120px); overflow-y: auto; padding: 8px; border-radius: 14px;
+  background: var(--superficie); color: var(--testo); box-shadow: var(--ombra); border: 1px solid var(--bordo);
+}
+.filtri-titolo { margin: 4px 8px 6px; font: 700 15px/1.2 var(--font-display); letter-spacing: .04em; }
+.filtri-sezione { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bordo); }
+.filtri-titolo small { font: 400 12px var(--font-body); letter-spacing: 0; color: var(--testo-2); }
+.filtri-lista label {
+  display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 4px 8px; border-radius: 10px;
+  font: 500 16px/1.2 var(--font-body); cursor: pointer;
+}
+.filtri-lista label:hover { background: var(--bg); }
+.filtri-lista input { width: 22px; height: 22px; accent-color: var(--blu); flex: none; }
+.filtri-azzera {
+  width: 100%; margin-top: 6px; min-height: 42px; border: 0; border-top: 1px solid var(--bordo);
+  background: none; color: var(--blu); font: 600 15px var(--font-body);
+}
+.filtri-lista label small { font-size: 13px; color: var(--testo-2); }
+.tag-ztl {
+  flex: none; padding: 1px 4px; border-radius: 4px; background: var(--pieno); color: #fff;
+  font: 700 10px/1.2 var(--font-body); font-style: normal;
+}
+.filtri-azzera:disabled { color: var(--testo-2); opacity: .6; }
 .chip {
   border: 1px solid var(--bordo); background: transparent;
   border-radius: 999px; padding: 5px 12px; font-size: 13.5px; font-weight: 500;
 }
 .chip[aria-pressed="true"] { background: var(--blu); border-color: var(--blu); color: var(--su-colore); }
-.filtri .sep { width: 1px; background: var(--bordo); margin: 2px 4px; }
 
 /* ---- Lista ---- */
 .lista { list-style: none; margin: 0; padding: 0; }
@@ -287,12 +292,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .icona.pieno { background: var(--pieno); }
 .icona.parcheggio, .icona.blu { background: var(--blu); }
 .icona.largo { width: 80px; height: 40px; }
-.icona.prezzo { width: 80px; height: 40px; font-size: 21px; font-variant-numeric: tabular-nums; }
-.icona.economico { background: var(--libero); }
-.icona.medio { background: var(--attenzione); }
-.icona.caro { background: var(--pieno); }
-.icona.nd { background: var(--grigio); }
-.icona.vecchio { opacity: .6; }
 .icona.verde { background: var(--libero); }
 .icona.segnalato { background: var(--libero); border-radius: 50%; }
 .icona .num { font-size: 17px; font-variant-numeric: tabular-nums; }
@@ -304,8 +303,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tag.reale { color: var(--libero); }
 .tag.pieno { color: var(--pieno); }
 .tag.quasi-pieno { color: var(--attenzione); }
-.tag.vecchio { color: var(--pieno); }
-.tag.autostrada { color: #fff; background: #1f7a3f; padding: 0 6px; border-radius: 4px; }
 .voce-dist { text-align: right; font-variant-numeric: tabular-nums; }
 .voce-dist b { display: block; font: 700 17px/1.1 var(--font-display); }
 .voce-dist small { color: var(--testo-2); font-size: 12px; }
@@ -330,14 +327,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .mk.quasi-pieno { background: var(--attenzione); }
 .mk.pieno { background: var(--pieno); }
 .mk.stallo { width: 14px; height: 14px; border-radius: 3px; border-width: 1.5px; font-size: 0; }
-/* Distributori: rettangolo con il prezzo, colore per fascia di prezzo in zona */
-.mk.prezzo { width: auto; min-width: 58px; height: 30px; padding: 0 6px; font-size: 17px; font-variant-numeric: tabular-nums; }
-.mk.economico { background: var(--libero); }
-.mk.medio { background: var(--attenzione); }
-.mk.caro { background: var(--pieno); }
-.mk.nd { width: 18px; height: 18px; border-radius: 5px; background: var(--grigio); font-size: 0; }
-.mk.vecchio { border-style: dashed; opacity: .7; }
-.mk.top { box-shadow: 0 0 0 3px var(--libero), 0 2px 8px rgba(0,0,0,.4); }
 .mk.segn { width: 22px; height: 22px; border-radius: 50%; font-size: 0; background: var(--libero); }
 .mk.segn.occupato { background: var(--pieno); }
 .mk.segn.libero::after {
@@ -345,19 +334,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 2px solid var(--libero); animation: pulsa 2s ease-out infinite;
 }
 @keyframes pulsa { from { transform: scale(1); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
-/* Cono dell'orientamento: parte dal centro del pallino, lungo il doppio di quello di Google Maps.
-   Il pallino è il doppio di quello delle altre app Qui (36 px invece di 18). */
-.io-box { position: relative; width: 36px; height: 36px; }
+/* Cono dell'orientamento (bussola.js): parte dal centro del pallino, come in Google Maps */
+.io-box { position: relative; width: 18px; height: 18px; }
 .io-cono {
-  position: absolute; left: -17px; bottom: 18px; width: 70px; height: 84px;
+  position: absolute; left: -9px; bottom: 9px; width: 36px; height: 42px;
   transform-origin: 50% 100%; pointer-events: none;
   background: radial-gradient(circle at 50% 100%, rgba(47,124,246,.8) 0, rgba(47,124,246,.45) 50%, rgba(47,124,246,.05) 100%);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
 }
 .io-box .io { position: relative; }
 .io {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: #2f7cf6; border: 5px solid #fff; box-shadow: 0 0 0 10px rgba(47,124,246,.25);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2f7cf6; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(47,124,246,.25);
 }
 
 .leaflet-popup-content { font: 20px/1.35 var(--font-body); margin: 16px 18px; }
@@ -369,18 +357,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pop h3 { margin: 0 40px 6px 0; font: 700 26px/1.15 var(--font-display); color: var(--testo); }
 .pop p { margin: 4px 0; color: var(--testo-2); }
 .pop a { color: var(--blu); font-weight: 600; }
-.pop .pop-prezzo { margin: 8px 0; color: var(--testo); }
-.pop .pop-prezzo b { font: 700 34px/1 var(--font-display); font-variant-numeric: tabular-nums; }
-.pop .pop-prezzo.economico b { color: var(--libero); }
-.pop .pop-prezzo.medio b { color: var(--attenzione); }
-.pop .pop-prezzo.caro b { color: var(--pieno); }
-.pop .avviso { color: var(--pieno); font-weight: 600; }
-.pop-tab { width: 100%; border-collapse: collapse; font-size: 17px; margin: 6px 0; font-variant-numeric: tabular-nums; }
-.pop-tab th { text-align: left; font: 700 13px var(--font-body); color: var(--testo-2); padding: 2px 4px; }
-.pop-tab td { padding: 4px; border-top: 1px solid var(--bordo); color: var(--testo); }
-.pop-tab td:not(:first-child), .pop-tab th:not(:first-child) { text-align: right; }
-.pop-tab tr.scelto td { font-weight: 700; }
-.pop .fonte { font-size: 14px; }
 .pop .pop-vai {
   display: block; margin-top: 14px; padding: 14px 16px; border-radius: 12px;
   background: var(--blu); color: var(--su-colore); text-align: center; text-decoration: none;
@@ -418,7 +394,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .g-lista li > div { min-width: 0; }
 .g-segno { display: flex; justify-content: center; align-items: center; min-height: 32px; }
 .g-segno .mk { position: relative; }
-.g-linea { display: block; width: 64px; height: 6px; border-radius: 3px; background: #1b4f9c; opacity: .6; }
+.g-linea { display: block; width: 64px; height: 6px; border-radius: 3px; background: var(--t-strada); opacity: .75; }
 .g-barra {
   display: block; max-width: 96px; padding: 6px 8px; border-radius: 8px; background: var(--barra); color: #fff;
   font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -431,132 +407,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .g-fab.nero { background: #111418; color: #fff; }
 .g-fab.verde { background: var(--libero); color: var(--su-colore); }
 .g-fab.rosso { background: var(--pieno); color: var(--su-colore); }
-.g-fab.blu { background: var(--blu); color: var(--su-colore); }
 .g-def { margin: 0 0 10px; }
 .g-def dt { font: 700 15px/1.2 var(--font-display); letter-spacing: .06em; margin-top: 10px; }
 .g-def dd { margin: 4px 0 0; }
 .g-punti { margin: 0 0 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
-
-/* ---- Trekking ---- */
-.fab-azioni .fab-rifugio { width: 60px; height: 60px; background: var(--t-R); color: #fff; }
-.fab-azioni .fab-acqua { width: 60px; height: 60px; background: var(--t-W); color: #fff; }
-.g-fab.rifugio { background: var(--t-R); color: #fff; }
-.g-fab.acqua { background: var(--t-W); color: #fff; }
-.emergenza {
-  display: block; width: 100%; border: 0; cursor: pointer; font-family: var(--font-body); line-height: 1.3;
-  padding: 10px 12px; border-radius: 10px; text-align: center;
-  background: #d62828; color: #fff; text-decoration: none; font-weight: 600; font-size: 16px;
-}
-.emergenza b { font: 700 18px/1.2 var(--font-display); }
-.kpi-rif b { color: var(--t-R); }
-.kpi-acqua b { color: var(--t-W); }
-.filtri .chip.ordine + .sep { display: inline-block; }
-
-/* Menu Cosa mostrare: due gruppi */
-.cat-menu .cat-titolo:not(:first-child) { margin-top: 14px; }
-.cat-voce .diff { flex: none; }
-
-/* Segnaposto: quadratino col colore del tipo e un simbolo; pallino verde aperto, rosso chiuso */
-.mk[class*="tipo-"] { position: relative; background: var(--mk-sfondo); font-size: 15px; }
-.mk.tipo-R { --mk-sfondo: var(--t-R); }
-.mk.tipo-B { --mk-sfondo: var(--t-B); }
-.mk.tipo-W { --mk-sfondo: var(--t-W); border-radius: 50%; width: 26px; height: 26px; }
-.mk.tipo-S { --mk-sfondo: var(--t-S); border-radius: 50%; width: 26px; height: 26px; }
-.mk.tipo-C { --mk-sfondo: var(--t-C); border-radius: 50%; width: 26px; height: 26px; }
-.mk.tipo-F { --mk-sfondo: var(--t-F); }
-.mk svg { display: block; }
-.mk.aperto::after, .mk.chiuso::after {
-  content: ""; position: absolute; top: -5px; right: -5px;
-  width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff;
-  background: #22b45a;
-}
-.mk.chiuso { opacity: .55; }
-.mk.chiuso::after { background: var(--pieno); }
-.mk.chiuso:hover { opacity: 1; }
-
-/* Sigla della difficoltà: pastiglia col colore della scala CAI */
-.diff {
-  display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px;
-  font: 700 14px/1 var(--font-display); letter-spacing: .03em; color: #fff; background: var(--d-ND);
-}
-.diff.d-T { background: var(--d-T); }
-.diff.d-E { background: var(--d-E); color: #1b1b1b; }
-.diff.d-EE { background: var(--d-EE); }
-.diff.d-EEA { background: var(--d-EEA); }
-.diff.d-EAI { background: var(--d-EAI); }
-.diff.grande { height: 30px; min-width: 42px; font-size: 18px; border-radius: 8px; }
-@media (prefers-color-scheme: dark) { .diff.d-EEA { box-shadow: inset 0 0 0 1.5px #fff; } }
-
-/* Segnavia (osmc:symbol) e numero del sentiero sulla mappa */
-.segnavia { display: block; flex: none; }
-.lbl-sentiero { display: flex; filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); cursor: pointer; }
-.lbl-sentiero .segnavia { border-radius: 3px; }
-.mappa.zoom-basso .lbl-sentiero { display: none; }
-.mappa.zoom-basso .mk { transform: scale(.8); }
-
-.icona-tipo { display: grid; place-items: center; }
-.icona-tipo .mk { width: 36px; height: 36px; font-size: 17px; }
-.icona-tipo .mk.tipo-W, .icona-tipo .mk.tipo-S, .icona-tipo .mk.tipo-C { width: 32px; height: 32px; }
-.voce { grid-template-columns: 48px 1fr auto; }
-.voce .icona-tipo .segnavia { width: 44px; height: auto; border-radius: 3px; }
-.voce-meta .voce-km { font-weight: 700; color: var(--testo); }
-.voce-meta .diff { height: 18px; min-width: 26px; font-size: 12.5px; padding: 0 5px; }
-.tag.aperto { color: var(--libero); }
-.tag.chiuso { color: var(--pieno); }
-
-/* Riquadro (popup) */
-.pop .pop-tipo { margin: 0 0 6px; font-weight: 600; color: var(--testo); }
-.pop .pop-apertura { font-weight: 700; font-size: 19px; }
-.pop .pop-apertura.aperto { color: var(--libero); }
-.pop .pop-apertura.chiuso { color: var(--pieno); }
-.pop-orari { display: flex; flex-direction: column; margin: 6px 0; font-size: 16px; color: var(--testo); }
-.pop-orari b { font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
-.pop-pulsanti { display: flex; gap: 8px; margin-top: 14px; }
-.pop .pop-pulsanti .pop-vai { flex: 1; margin-top: 0; }
-.pop .pop-chiama { background: var(--libero); }
-.pop .avviso a { color: inherit; }
-.g-avviso { font-weight: 600; color: #d62828; }
-.g-avviso a { color: inherit; }
-.pop-testa { display: flex; align-items: center; gap: 10px; margin: 0 40px 6px 0; }
-.pop-testa h3 { margin: 0; }
-.pop-testa .segnavia { width: 52px; height: auto; border-radius: 3px; }
-.pop-diff { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; font-weight: 700; color: var(--testo); }
-.pop .pop-spiega { font-size: 14.5px; line-height: 1.35; margin: 2px 0 8px; }
-.pop-sentiero p:not(.pop-tipo):not(.pop-spiega):not(.fonte) { font-size: 17px; }
-.pop-num { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
-.pop-num div { background: var(--bg); border-radius: 10px; padding: 6px 10px; }
-.pop-num b { display: block; font: 700 20px/1.1 var(--font-display); color: var(--testo); font-variant-numeric: tabular-nums; }
-.pop-num span { font-size: 13px; color: var(--testo-2); }
-.pop-num i { font-style: normal; font-size: 12px; color: var(--testo-2); }
-.pop .pop-link { display: block; text-align: center; margin-top: 10px; font-size: 16px; }
-
-/* Barra del profilo altimetrico nel riquadro del sentiero */
-.profilo { display: block; width: 100%; height: 64px; margin: 4px 0 2px; }
-.profilo path.area { fill: var(--blu); opacity: .18; }
-.profilo path.linea { fill: none; stroke: var(--blu); stroke-width: 2; }
-
-/* ---- Foto delle fontanelle (salvata sul telefono) ---- */
-.pop-webcam-box { margin: 10px 0; }
-.pop-webcam-box > b { display: block; font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
-.pop-webcam { margin: 0 0 10px; }
-.pop-webcam img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--bg); }
-.pop-webcam figcaption { font-size: 14px; color: var(--testo-2); margin-top: 4px; }
-.pop-webcam .rotta-testo { display: none; font-size: 14px; color: var(--testo-2); margin: 0; }
-.pop-webcam.rotta a:first-child, .pop-webcam.rotta figcaption { display: none; }
-.pop-webcam.rotta .rotta-testo { display: block; }
-.pop-webcam-link { display: block; padding: 10px 12px; margin: 0 0 8px; border-radius: 12px; background: var(--bg); color: var(--testo); font-weight: 700; text-decoration: none; }
-.pop-webcam-link span { display: block; font-weight: 400; font-size: 13px; color: var(--testo-2); }
-.pop-foto { margin: 10px 0 4px; }
-.pop-foto img { display: block; width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; }
-.pop-foto .pop-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.pop .pop-scatta {
-  display: block; width: 100%; padding: 14px 16px; border-radius: 12px; cursor: pointer;
-  border: 2px dashed var(--blu); background: transparent; color: var(--blu); font: 700 20px/1.1 var(--font-body);
-}
-.pop-foto-azioni { display: flex; gap: 16px; margin-top: 6px; }
-.pop-foto-azioni button {
-  border: 0; background: none; padding: 6px 0; cursor: pointer;
-  color: var(--blu); font: 600 16px var(--font-body); text-decoration: underline;
+.link-guida {
+  align-self: flex-start; border: 0; background: none; padding: 4px 0;
+  color: var(--blu); font-weight: 600; font-size: 15px;
 }
 
 /* ---- Condividi su WhatsApp ---- */
@@ -577,77 +434,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (max-width: 370px) {
   .pannello-testa h2 { font-size: 21px; }
 }
-
-/* ---- Scheda del sentiero o del punto (pagina a tutto schermo, sopra l'elenco, sotto la guida) ---- */
-.pannello.scheda {
-  z-index: 1550;
-  /* scheda sempre bianca con le scritte nere, anche col tema scuro del telefono */
-  --superficie: #ffffff; --bg: #f1f3f6; --testo: #000000; --testo-2: #333333; --bordo: #d5dbe5;
-  --blu: #2f6b2a; --blu-scuro: #22521e; --su-colore: #ffffff; --osm: #3d4a63; --grigio: #5c6472;
-  --libero: #15805a; --attenzione: #8f5e00; --pieno: #c23a2f;
-  background: #ffffff; color: #000000; color-scheme: light;
-}
-/* Fumetto che compare toccando un sentiero sulla mappa */
-.pop-anteprima .leaflet-popup-content { margin: 10px 12px; }
-.anteprima { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 40px; }
-.ant-nome { font: 700 19px/1.2 var(--font-display); }
-.ant-vai { margin-left: auto; padding-left: 4px; font: 700 28px/1 var(--font-display); color: var(--blu); }
-.scheda-corpo { display: block; }
-.scheda-corpo .pop { font: 19px/1.4 var(--font-body); }
-.scheda-corpo .pop h3, .scheda-corpo .pop-testa { margin-right: 0; }
-.scheda-corpo .pop-num { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-.scheda-corpo .pop-foto img { max-height: 320px; }
-.scheda-corpo .profilo { width: 100%; height: 90px; }
-.pop .pop-mappa { border: 0; cursor: pointer; background: var(--bg); color: var(--testo); }
-.pop .pop-whatsapp {
-  display: flex; align-items: center; justify-content: center; gap: 8px; border: 0;
-  background: #1f8f4e; color: #fff;
-}
-.pop .pop-whatsapp:hover { background: #18773f; }
-.scheda-corpo .pop-pulsanti { flex-wrap: wrap; }
-.scheda-corpo .pop-pulsanti .pop-vai { flex: 1 1 140px; }
-.pop-streetview { margin-top: 14px; padding: 10px 12px 12px; border-radius: 12px; background: var(--bg); }
-.pop-streetview > b { font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
-.pop-streetview .pop-pulsanti { margin-top: 8px; flex-wrap: wrap; }
-.pop .pop-sv { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1 1 140px; margin-top: 0; font-size: 17px; background: #f4b400; color: #1c1c1c; }
-/* Bar e ristoranti lungo il percorso */
-.pop-ristoro:empty { display: none; }
-.pop-ristoro { margin: 12px 0; padding: 10px 12px; border-radius: 12px; background: var(--bg); }
-.rist-titolo b { display: block; font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
-.rist-titolo span { font-size: 15px; color: var(--testo-2); }
-.rist-voce {
-  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 8px; padding: 6px 0; border: 0;
-  border-top: 1px solid var(--bordo); background: none; color: var(--testo); text-align: left; font: inherit; cursor: pointer;
-}
-.rist-voce .mk { flex: none; }
-.rist-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.rist-testo b { font: 700 18px/1.2 var(--font-display); }
-.rist-testo span { font-size: 15px; color: var(--testo-2); }
-.rist-voce .tag { flex: none; font-size: 14px; font-weight: 700; }
-.rist-vuoto { margin: 0; font-size: 15px; color: var(--testo-2); }
-.pop-scarica { margin-top: 14px; padding: 10px 12px 12px; border-radius: 12px; background: var(--bg); }
-.pop-scarica > b { font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
-.pop-scarica .pop-scarica-spiega { margin: 4px 0 6px; font-size: 15px; color: var(--testo-2); }
-.pop-scarica fieldset { border: 1px solid var(--bordo, #d0d0d0); border-radius: 10px; margin: 8px 0 0; padding: 4px 10px 8px; }
-.pop-scarica legend { font-size: 14px; color: var(--testo-2); padding: 0 4px; }
-.pop-scelte { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-.pop-scelte-col { flex-direction: column; }
-.pop-scelte label { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
-.pop-scelte input { width: 22px; height: 22px; margin: 0; accent-color: #1f6fb2; }
-.pop .pop-apri-scarica, .pop .pop-salva {
-  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; cursor: pointer;
-  background: var(--bg); color: var(--testo);
-}
-.pop .pop-salva { background: #1f6fb2; color: #fff; }
-.pop .pop-salva[disabled] { opacity: .8; cursor: progress; }
-.salvato-box { margin-top: 14px; padding: 10px 12px; border-radius: 12px; border-left: 5px solid #1f7a3f; background: #e9f5ec; color: #111; }
-.salvato-box b { display: block; font-size: 17px; color: #1f7a3f; }
-.salvato-box span { display: block; margin-top: 2px; font-size: 14px; color: #444; }
-.salvato-azioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.salvato-azioni button { flex: 1 1 140px; padding: 10px 12px; border-radius: 10px; border: 1px solid #b9c7bd; background: #fff; color: #111; font: 600 15px var(--font-body); cursor: pointer; }
-.salvati { margin: 10px 0 4px; padding: 8px 10px 4px; border-radius: 12px; border-left: 5px solid #1f6fb2; background: var(--bg); }
-.salvati h3 { margin: 0 0 2px; font: 700 13px var(--font-body); color: var(--testo-2); text-transform: uppercase; letter-spacing: .04em; }
-.pop .pop-ottieni { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; border: 0; cursor: pointer; }
 
 /* ---- Installa l'app: riquadro in basso e voce nella pagina Elenco ---- */
 .btn-installa {
@@ -682,173 +468,72 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .installa-ok { border: 0; background: var(--blu); color: var(--su-colore); }
 @media (prefers-reduced-motion: reduce) { .installa { animation: none; } }
 
-/* ---------- Catasto sentieri CAI: percorribilità ---------- */
-.cai-stato { margin: 10px 0 4px; padding: 8px 10px; border-radius: 8px; border-left: 5px solid; background: #f3f6f2; color: #111; }
-.cai-stato b { display: block; font-size: 15px; }
-.cai-stato span { font-size: 12px; color: #555; }
-.cai-stato p { margin: 6px 0 0; font-size: 14px; }
-.cai-stato.cai-ok { border-color: #1f7a3f; background: #e9f5ec; }
-.cai-stato.cai-ok b { color: #1f7a3f; }
-.cai-stato.cai-parz { border-color: #d97706; background: #fff4e0; }
-.cai-stato.cai-parz b { color: #a85a00; }
-.cai-stato.cai-no { border-color: #c62828; background: #fdecea; }
-.cai-stato.cai-no b { color: #c62828; }
-.cai-stato.cai-ver { border-color: #6b7280; background: #f1f3f5; }
-.cai-stato.cai-ver b { color: #4b5563; }
-.avviso-cai { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 800 15px/1 system-ui, sans-serif;
-  color: #fff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); cursor: pointer; }
-.avviso-cai.cai-no { background: #c62828; }
-.avviso-cai.cai-parz { background: #e07b00; }
-.ant-cai { display: block; font-size: 12px; font-weight: 700; }
-.ant-cai.cai-no, .tag.cai-no { color: #c62828; }
-.ant-cai.cai-parz, .tag.cai-parz { color: #c96a00; }
+/* Colore del segnaposto secondo il tipo di parcheggio (stesso colore del pallino nel menu) */
+.mk.t-aperto, .icona.t-aperto, .pallino.t-aperto { background: var(--t-aperto); }
+.mk.t-multipiano, .icona.t-multipiano, .pallino.t-multipiano { background: var(--t-multipiano); }
+.mk.t-garage, .icona.t-garage, .pallino.t-garage { background: var(--t-garage); }
+.mk.t-strada, .icona.t-strada, .pallino.t-strada { background: var(--t-strada); }
+.mk.t-disabili, .icona.t-disabili, .pallino.t-disabili { background: var(--t-disabili); }
+.pallino.t-reale { background: var(--libero); }
+.pallino { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--bordo); }
+.g-colori { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-size: 14px; }
+.g-colori span { display: inline-flex; align-items: center; gap: 6px; }
 
-/* ---- Percorso a piedi da A a B (come «Distributori sul percorso» di Qui-Distributori) ---- */
-:root { --percorso: #d61f8c; }
-.fab[aria-pressed="true"] { background: var(--blu); color: var(--su-colore); }
-.percorso-barra {
-  position: absolute; left: 12px; right: 76px; top: 16px; z-index: 950;
-  display: flex; align-items: stretch; max-width: 520px;
-  border-radius: 24px; background: var(--superficie); box-shadow: var(--ombra); overflow: hidden;
-  border-left: 6px solid var(--percorso);
+/* ---- La tua auto ---- */
+.mk-auto {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
+  background: #111418; color: #fff; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.45);
 }
-.percorso-barra[hidden] { display: none; }
-.percorso-testo {
-  flex: 1; min-width: 0; border: 0; background: none; text-align: left;
-  padding: 0 4px 0 12px; min-height: 48px;
-  font: 600 15px/1.2 var(--font-body); color: var(--testo);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.mk-auto svg { width: 22px; height: 22px; }
+.g-segno .mk-auto { width: 32px; height: 32px; }
+.avviso-auto {
+  position: fixed; left: 50%; bottom: calc(176px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  z-index: 2100; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 12px; border-radius: 14px; background: #111418; color: #fff; box-shadow: var(--ombra);
+  font: 600 16px/1.2 var(--font-body);
 }
-.percorso-esci {
-  flex: none; width: 48px; border: 0; background: none; color: var(--testo-2);
-  display: grid; place-items: center;
+.avviso-auto-icona { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #111418; flex: none; }
+.avviso-auto button {
+  border: 0; border-radius: 10px; padding: 10px 14px; background: #fff; color: #111418;
+  font: 700 15px var(--font-body); white-space: nowrap;
 }
-.percorso {
-  position: absolute; left: 12px; right: 12px; top: 12px; z-index: 1100;
-  max-width: 460px; margin: 0;
-  display: flex; flex-direction: column; gap: 12px;
-  padding: 14px 16px 12px; border-radius: 18px;
-  background: var(--superficie); color: var(--testo); box-shadow: var(--ombra);
-  animation: entra .2s ease-out;
+.pop .pop-azioni { display: flex; gap: 8px; margin-top: 10px; }
+.pop .pop-azioni button {
+  flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--bordo); background: var(--bg); color: var(--testo);
+  font: 600 15px var(--font-body);
 }
-.percorso[hidden] { display: none; }
-.percorso-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.percorso-testa h2 { margin: 0; font: 700 21px/1.1 var(--font-display); }
-.percorso-testa .chiudi { width: 38px; height: 38px; }
-.percorso-campi { display: flex; align-items: center; gap: 8px; }
-.percorso-righe { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.percorso .campo { display: flex; align-items: center; gap: 6px; }
-.percorso .campo input {
-  flex: 1; min-width: 0; height: 42px; padding: 0 12px;
-  border: 1px solid var(--bordo); border-radius: 10px;
-  background: var(--bg); color: var(--testo); font: 500 16px var(--font-body);
-}
-.percorso .campo input:focus { outline: 2px solid var(--blu); outline-offset: 0; background: var(--superficie); }
-.perc-mappa, .perc-inverti {
-  flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0;
-  display: grid; place-items: center; background: var(--bg); color: var(--blu);
-}
-.perc-pin {
-  flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
-  font: 700 14px/1 var(--font-display); color: #fff; border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,.35);
-}
-.perc-pin.da { background: var(--libero); }
-.perc-pin.a { background: var(--pieno); }
-.perc-pin.qui { background: var(--percorso); width: 18px; height: 18px; }
-.percorso-opz { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 14px; color: var(--testo-2); }
-.percorso-opz label { display: flex; align-items: center; gap: 8px; }
-.percorso-opz select {
-  height: 36px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--bordo);
-  background: var(--superficie); color: var(--testo); font: 600 15px var(--font-body);
-}
-.btn-perc-vai {
-  height: 48px; border: 0; border-radius: 12px;
-  background: var(--blu); color: var(--su-colore); font: 700 18px/1 var(--font-display); letter-spacing: .02em;
-}
-.btn-perc-vai:disabled { opacity: .7; cursor: progress; }
-.perc-errore { margin: 0; color: var(--pieno); font-weight: 600; font-size: 14px; }
-.perc-errore[hidden] { display: none; }
-.perc-nota { margin: 0; font-size: 12px; color: var(--testo-2); }
-.scelta-mappa { cursor: crosshair; }
-.scelta-mappa .leaflet-interactive { cursor: crosshair; }
-/* Riquadro in basso: numeri, profilo altimetrico, fondo */
-.percorso-info {
-  position: absolute; left: 12px; right: 12px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); z-index: 950;
-  max-width: 560px; margin: 0 auto; padding: 10px 12px 8px; border-radius: 16px;
-  background: var(--superficie); color: var(--testo); box-shadow: var(--ombra);
-  border-top: 4px solid var(--percorso);
-}
-.percorso-info[hidden] { display: none; }
-.pi-num { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font: 700 18px/1.1 var(--font-display); }
-.pi-num small { font: 500 13px var(--font-body); color: var(--testo-2); }
-.pi-profilo { position: relative; height: 92px; margin: 6px 0 2px; touch-action: none; cursor: crosshair; }
-.pi-profilo svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.pi-profilo .area { fill: var(--percorso); opacity: .16; }
-.pi-profilo .linea { fill: none; stroke: var(--percorso); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.pi-profilo .griglia { stroke: var(--bordo); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.pi-profilo .cursore { stroke: var(--testo); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.pi-asse { position: absolute; font: 600 11px/1 var(--font-body); color: var(--testo-2); pointer-events: none; background: color-mix(in srgb, var(--superficie) 75%, transparent); padding: 1px 3px; border-radius: 4px; }
-.pi-etichetta {
-  position: absolute; top: -4px; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
-  font: 700 12px/1 var(--font-body); padding: 3px 6px; border-radius: 6px; background: var(--testo); color: var(--superficie);
-}
-.pi-sotto { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--testo-2); }
-.pi-fondo { min-width: 0; line-height: 1.35; }
-.pi-fondo i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 3px 0 0; vertical-align: -1px; }
-.pi-gpx {
-  flex: none; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 2px solid var(--blu);
-  background: var(--superficie); color: var(--blu); font: 700 14px/1 var(--font-display);
-}
-.pop-vai.pop-apiedi { background: var(--superficie); color: var(--percorso); border: 2px solid var(--percorso); }
-@media (prefers-reduced-motion: reduce) { .percorso { animation: none; } }
+.icona.auto-mia { background: #111418; color: #fff; border-radius: 50%; }
+.icona.auto-mia svg { width: 22px; height: 22px; }
 
-/* ---- Menu «Cosa mostrare» in tre sezioni che si aprono e chiudono ---- */
-.cat-sez { border-radius: 12px; }
-.cat-sez + .cat-sez { margin-top: 6px; border-top: 1px solid var(--bordo); padding-top: 6px; }
-.cat-sez > summary {
-  display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px; border-radius: 10px;
-  list-style: none; cursor: pointer; font: 700 17px/1.2 var(--font-display);
+/* ---- Salvaschermo (v39): schermo nero, distanza e direzione dell'auto ---- */
+.salvaschermo {
+  position: fixed; inset: 0; z-index: 1950; background: #000; color: #e9edf3;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  -webkit-user-select: none; user-select: none; touch-action: none;
 }
-.cat-sez > summary::-webkit-details-marker { display: none; }
-.cat-sez > summary::before {
-  content: ""; flex: none; width: 9px; height: 9px; margin: 0 4px 0 2px;
-  border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s;
+.ss-contenuto {
+  width: 100%; max-width: 520px; height: 100%; box-sizing: border-box;
+  padding: calc(28px + env(safe-area-inset-top, 0px)) 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center;
+  transition: transform 2s ease;
 }
-.cat-sez[open] > summary::before { transform: rotate(45deg); }
-.cat-sez-nome { flex: 1; min-width: 0; }
-.cat-sez-nome small { display: block; font: 500 13px/1.2 var(--font-body); color: var(--testo-2); }
-.cat-conta { flex: none; min-width: 26px; padding: 3px 7px; border-radius: 999px; text-align: center; background: var(--bg); color: var(--testo-2); font: 700 14px/1 var(--font-body); }
-.cat-conta.attiva { background: var(--blu); color: var(--su-colore); }
-.cat-nota { margin: 4px 8px 6px; font-size: 13px; color: var(--testo-2); }
-.linea-noncai { flex: none; width: 30px; height: 0; border-top: 4px dashed var(--colore); }
-/* Sentieri usati dal percorso e avviso per i tratti NON CAI */
-.pi-fondo { font-size: 13px; color: var(--testo-2); }
-.pi-usati { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; max-height: 76px; overflow-y: auto; }
-.pi-etic { font-weight: 600; margin-right: 2px; }
-.pi-sent {
-  display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 8px 2px 4px; border-radius: 999px;
-  border: 1px solid var(--bordo); background: var(--bg); color: var(--testo); font: 600 13px/1 var(--font-body);
+.ss-ora { font: 300 44px/1 var(--font-body); color: #8b95a7; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.ss-centro { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ss-segno { width: min(52vw, 230px); height: min(52vw, 230px); display: grid; place-items: center; }
+.ss-freccia, .ss-icona { grid-area: 1 / 1; width: 100%; height: 100%; display: grid; place-items: center; }
+.ss-freccia svg { width: 82%; height: 82%; color: #fff; }
+.ss-freccia { transition: transform .5s ease-out; }
+.ss-segno { position: relative; }
+.ss-segno.al-nord::before {
+  content: "N"; position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  font: 700 18px var(--font-body); color: #8b95a7;
 }
-.pi-sent svg { flex: none; }
-.pi-sent small { font-weight: 500; color: var(--testo-2); }
-.pi-avviso { margin: 4px 0 0; padding: 5px 8px; border-radius: 8px; background: #fff3d6; color: #6b4a00; font-weight: 600; line-height: 1.3; }
-.pi-nota { margin: 3px 0 0; }
-.pi-sotto { justify-content: flex-end; margin-top: 4px; }
-/* con «+ non CAI» il testo di Cosa mostrare si accorcia invece di schiacciare la ricerca */
-.carb { max-width: 46%; }
-.cerca { min-width: 72px; }
-
-/* Riquadro del percorso: croce in alto a destra per chiuderlo (il percorso resta; si riapre toccando la barra in alto) */
-.pi-testa { display: flex; align-items: flex-start; gap: 6px; }
-.pi-testa .pi-num { flex: 1; min-width: 0; }
-.pi-chiudi {
-  flex: none; width: 36px; height: 36px; margin: -4px -4px 0 0; border: 0; border-radius: 50%;
-  display: grid; place-items: center; background: none; color: var(--testo-2);
-}
-/* Riquadro della freccia: croce in alto a destra al posto di «Esci» */
-.guida-rotta { padding-right: 52px; grid-template-areas: "b v" "b v" "t t"; }
-.guida-rotta .gr-esci {
-  position: absolute; top: 8px; right: 8px; grid-area: auto; width: 38px; height: 38px; min-height: 0; padding: 0; margin: 0;
-  display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--testo-2);
-}
+.ss-icona svg { width: 46%; height: 46%; color: #5d6779; }
+.ss-icona.arrivato svg, .ss-icona.guida svg { color: #fff; }
+.ss-grande { font: 700 clamp(56px, 18vw, 96px)/1 var(--font-body); color: #fff; font-variant-numeric: tabular-nums; }
+.ss-grande small { font-size: .38em; font-weight: 600; color: #8b95a7; margin-left: 6px; }
+.ss-sotto { font: 500 20px/1.35 var(--font-body); color: #b8c0cd; max-width: 22em; }
+.ss-sotto b { color: #5fd38d; font-weight: 700; }
+.ss-stato { font: 500 17px/1.35 var(--font-body); color: #8b95a7; max-width: 24em; }
+.ss-esci { font: 500 13px var(--font-body); color: #4a5262; margin-top: 10px; }
+@media (max-height: 560px) { .ss-segno { width: 34vh; height: 34vh; } .ss-ora { font-size: 30px; } }

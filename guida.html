@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Guida a Qui-Parking</title>
+  <meta name="description" content="Come si usa Qui-Parking: segnaposto, ZTL, pulsanti, elenco, impostazioni e segnalazioni">
+  <meta name="theme-color" content="#1b4f9c">
+  <link rel="icon" href="favicon-64.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+  <style>
+:root {
+  --blu: #1b4f9c;
+  --blu-scuro: #143c78;
+  --libero: #15805a;
+  --attenzione: #b87900;
+  --pieno: #c23a2f;
+  --osm: #5a6a86;
+  --grigio: #7a8291;
+  --bg: #f3f5f9;
+  --superficie: #ffffff;
+  --testo: #172033;
+  --testo-2: #56627a;
+  --bordo: #dce2ec;
+  --ombra: 0 6px 24px rgba(20, 35, 70, .16);
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r: 14px;
+  --su-colore: #ffffff;
+  --barra: #1b4f9c;
+  /* colori dei segnaposto per tipo di parcheggio */
+  --t-aperto: #1b4f9c;
+  --t-multipiano: #6a3aa8;
+  --t-garage: #0d7377;
+  --t-strada: #a8541a;
+  --t-disabili: #b0306f;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --blu: #4f86dc;
+    --blu-scuro: #3a6fc2;
+    --libero: #3fbf8a;
+    --attenzione: #e3a82d;
+    --pieno: #ec6a5f;
+    --osm: #93a2bf;
+    --grigio: #8e97a6;
+    --bg: #0f1522;
+    --superficie: #182132;
+    --testo: #e8edf6;
+    --testo-2: #9eabc2;
+    --bordo: #2a3650;
+    --ombra: 0 6px 24px rgba(0, 0, 0, .45);
+    --su-colore: #0c1220;
+    --barra: #19386a;
+    --t-aperto: #4f86dc;
+    --t-multipiano: #9a72d6;
+    --t-garage: #2fa8a6;
+    --t-strada: #d98545;
+    --t-disabili: #e0679f;
+    color-scheme: dark;
+  }
+  .mappa:not(.satellite) .leaflet-tile-pane { filter: brightness(.72) contrast(1.1) saturate(.7); }
+}
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--testo); font: 16px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--blu); }
+.testa {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 14px; background: var(--barra); color: #fff;
+}
+.testa img { width: 40px; height: 40px; border-radius: 9px; }
+.testa h1 { margin: 0; font: 700 26px/1 var(--font-display); letter-spacing: .01em; }
+.foglio {
+  max-width: 720px; margin: 20px auto; padding: 20px 20px 28px;
+  background: var(--superficie); border-radius: 16px; box-shadow: var(--ombra);
+}
+@media (max-width: 760px) { .foglio { margin: 0; border-radius: 0; box-shadow: none; } }
+.guida-corpo { display: flex; flex-direction: column; }
+.segn-box { display: flex; align-items: center; gap: 4px; }
+/* ZTL: piccola etichetta sul segnaposto dei parcheggi dentro una ZTL o in Area C */
+.mk, .icona { position: relative; }
+.mk.in-ztl::before, .mk.in-areac::before, .icona.in-ztl::before, .icona.in-areac::before {
+  content: "ZTL"; position: absolute; top: -10px; right: -12px;
+  padding: 1px 3px; border-radius: 4px; border: 1.5px solid #fff;
+  font: 700 10px/1.1 var(--font-body); letter-spacing: .02em; color: #fff; background: var(--pieno);
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+.mk.in-areac::before, .icona.in-areac::before { content: "C"; background: var(--attenzione); }
+.icona.in-ztl::before, .icona.in-areac::before { top: -6px; right: -8px; }
+.mk.varco {
+  width: 16px; height: 16px; border-radius: 50%; font-size: 0;
+  background: var(--pieno); border: 2px solid #fff;
+}
+.mk.varco::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #fff; }
+.tag.ztl { color: #fff; background: var(--pieno); padding: 0 5px; border-radius: 4px; }
+.tag.area-c { color: #fff; background: var(--attenzione); padding: 0 5px; border-radius: 4px; }
+.pop .avviso { color: var(--pieno); font-weight: 600; }
+.pop .fonte { font-size: 14px; }
+.g-area { display: block; width: 56px; height: 34px; border-radius: 6px; border: 2px solid var(--pieno); background: color-mix(in srgb, var(--pieno) 14%, transparent); }
+.g-area.c { border-style: dashed; border-color: var(--attenzione); background: transparent; }
+.segn-box .mk.segn { position: relative; flex: none; }
+.segn-eta {
+  font: 700 12px/1 var(--font-body); font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding: 3px 6px; border-radius: 9px;
+  background: var(--superficie); color: var(--libero); box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.btn-help {
+  margin-left: auto; border: 2px solid var(--blu); border-radius: 999px;
+  padding: 6px 18px; min-height: 40px; background: var(--superficie); color: var(--blu);
+  font: 700 17px/1 var(--font-display); letter-spacing: .08em;
+}
+.btn-help.g-help { margin-left: 0; min-height: 0; display: inline-block; font-size: 14px; padding: 5px 12px; }
+/* ---- Marker sulla mappa ---- */
+.mk {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 7px;
+  font: 700 16px/1 var(--font-display); color: #fff;
+  background: var(--blu); border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+.mk.reale { width: auto; min-width: 30px; padding: 0 5px; font-variant-numeric: tabular-nums; }
+.mk.blu { background: var(--blu); }
+.mk.largo { width: 60px; height: 30px; }
+.mk.verde { background: var(--libero); }
+.mk.libero { background: var(--libero); }
+.mk.quasi-pieno { background: var(--attenzione); }
+.mk.pieno { background: var(--pieno); }
+.mk.stallo { width: 14px; height: 14px; border-radius: 3px; border-width: 1.5px; font-size: 0; }
+.mk.segn { width: 22px; height: 22px; border-radius: 50%; font-size: 0; background: var(--libero); }
+.mk.segn.occupato { background: var(--pieno); }
+.mk.segn.libero::after {
+  content: ""; position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--libero); animation: pulsa 2s ease-out infinite;
+}
+@keyframes pulsa { from { transform: scale(1); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+.io {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2f7cf6; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(47,124,246,.25);
+}
+
+.guida-corpo { gap: 18px; font-size: 16px; line-height: 1.5; }
+.guida-corpo h3 { margin: 6px 0 10px; font: 700 22px/1.2 var(--font-display); color: var(--blu); }
+.guida-corpo p { margin: 0 0 10px; }
+.guida-corpo section { scroll-margin-top: 12px; border-top: 1px solid var(--bordo); padding-top: 14px; }
+.g-intro { font-size: 17px; }
+.g-versione { color: var(--testo-2); font-size: 13px; }
+.g-indice { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-indice a {
+  border: 1px solid var(--bordo); border-radius: 999px; padding: 5px 12px;
+  color: var(--testo); text-decoration: none; font-size: 14px; font-weight: 500;
+}
+.g-lista { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.g-lista li { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
+.g-lista li > div { min-width: 0; }
+.g-segno { display: flex; justify-content: center; align-items: center; min-height: 32px; }
+.g-segno .mk { position: relative; }
+.g-linea { display: block; width: 64px; height: 6px; border-radius: 3px; background: var(--t-strada); opacity: .75; }
+.g-barra {
+  display: block; max-width: 96px; padding: 6px 8px; border-radius: 8px; background: var(--barra); color: #fff;
+  font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.g-barra.corto { font-size: 13px; font-weight: 600; }
+.g-fab {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--superficie); color: var(--blu); box-shadow: 0 1px 6px rgba(20,35,70,.25);
+}
+.g-fab.nero { background: #111418; color: #fff; }
+.g-fab.verde { background: var(--libero); color: var(--su-colore); }
+.g-fab.rosso { background: var(--pieno); color: var(--su-colore); }
+.g-def { margin: 0 0 10px; }
+.g-def dt { font: 700 15px/1.2 var(--font-display); letter-spacing: .06em; margin-top: 10px; }
+.g-def dd { margin: 4px 0 0; }
+.g-punti { margin: 0 0 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+
+.g-indice a { background: var(--superficie); }
+@media print {
+  .testa { background: #1b4f9c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .foglio { box-shadow: none; margin: 0; max-width: none; }
+  .g-indice { display: none; }
+  .mk, .g-fab, .g-barra, .g-linea, .io, .g-area, .btn-help { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+
+/* Colore del segnaposto secondo il tipo di parcheggio (stesso colore del pallino nel menu) */
+.mk.t-aperto, .icona.t-aperto, .pallino.t-aperto { background: var(--t-aperto); }
+.mk.t-multipiano, .icona.t-multipiano, .pallino.t-multipiano { background: var(--t-multipiano); }
+.mk.t-garage, .icona.t-garage, .pallino.t-garage { background: var(--t-garage); }
+.mk.t-strada, .icona.t-strada, .pallino.t-strada { background: var(--t-strada); }
+.mk.t-disabili, .icona.t-disabili, .pallino.t-disabili { background: var(--t-disabili); }
+.pallino.t-reale { background: var(--libero); }
+.pallino { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--bordo); }
+.g-colori { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-size: 14px; }
+.g-colori span { display: inline-flex; align-items: center; gap: 6px; }
+  </style>
+</head>
+<body>
+  <header class="testa">
+    <img src="icon-192.png" alt="">
+    <h1>Guida a Qui-Parking</h1>
+  </header>
+  <main class="foglio">
+      <div class="guida-corpo">
+        <p class="g-intro"><b>Qui-Parking</b> ti mostra dove parcheggiare vicino a te: i parcheggi e le strade con sosta,
+          i posti liberi in questo momento dove il Comune li pubblica, e i posti che altri utenti hanno appena visto liberarsi.</p>
+        <p class="g-versione">Versione 39 · <a href="./">Apri Qui-Parking</a></p>
+
+        <nav class="g-indice" aria-label="Argomenti">
+          <a href="#g-mappa">Segnaposto</a><a href="#g-pulsanti">Pulsanti</a><a href="#g-elenco">Elenco e impostazioni</a>
+          <a href="#g-segnalazioni">Segnalazioni</a><a href="#g-consigli">Consigli</a>
+        </nav>
+
+        <section id="g-mappa">
+          <h3>I segnaposto sulla mappa</h3>
+          <ul class="g-lista">
+            <li><span class="g-segno"><span class="mk reale verde">42</span></span><div><b>Quadrato verde con numero</b>: parcheggio con posti liberi <i>adesso</i>; il numero dice quanti.</div></li>
+            <li><span class="g-segno"><span class="mk reale pieno">0</span></span><div><b>Rosso con 0</b>: parcheggio pieno in questo momento.</div></li>
+            <li><span class="g-segno"><span class="mk t-aperto">4</span></span><div><b>Quadrato con numero</b>: parcheggio piccolo, da 1 a 6 posti in tutto.</div></li>
+            <li><span class="g-segno"><span class="mk t-multipiano largo">120</span></span><div><b>Rettangolo con numero</b>: parcheggio con più di 6 posti in tutto.</div></li>
+            <li><span class="g-segno"><span class="mk t-aperto">N</span></span><div><b>Quadrato con N</b>: parcheggio di cui non si sa quanti posti ha.</div></li>
+            <li><span class="g-segno"><span class="mk t-garage">8</span></span><div><b>Il colore dice il tipo</b> (come i pallini nel menu dei tipi):<span class="g-colori"><span><i class="pallino t-aperto"></i>blu: all'aperto</span><span><i class="pallino t-multipiano"></i>viola: multipiano e interrati</span><span><i class="pallino t-garage"></i>verde petrolio: garage e posti coperti</span><span><i class="pallino t-strada"></i>marrone: sosta su strada</span><span><i class="pallino t-disabili"></i>rosa: stalli per disabili</span><span><i class="pallino t-reale"></i>verde: posti liberi adesso</span></span></div></li>
+            <li><span class="g-segno"><span class="mk t-aperto largo">40</span></span><div><b>Numero stimato</b>: se la mappa non dice quanti posti ci sono, l'app li stima dalla superficie dell'area di sosta (circa 25 m² per auto) o dalla lunghezza della strada. Nel riquadro compare "circa", nell'elenco il segno ~. La stima può sbagliare anche di un terzo.</div></li>
+            <li><span class="g-segno"><span class="segn-box"><span class="mk segn libero"></span><span class="segn-eta">5 min</span></span></span><div><b>Pallino verde</b>: posto libero segnalato da un utente; accanto, da quanti minuti. Sparisce dopo 2 ore.</div></li>
+            <li><span class="g-segno"><span class="mk segn occupato"></span></span><div><b>Pallino rosso</b>: qualcuno ha appena parcheggiato lì.</div></li>
+            <li><span class="g-segno"><span class="g-linea"></span></span><div><b>Linea marrone lungo una strada</b>: tratto di strada dove si può sostare. Avvicinando molto la mappa compare a metà della linea un segnaposto con il numero stimato di posti.</div></li>
+            <li><span class="g-segno"><span class="g-area"></span></span><div><b>Area rossa</b>: Zona a Traffico Limitato o area pedonale. Si entra solo con il contrassegno (residenti, autorizzati, disabili…). Toccala per vedere di che zona si tratta.</div></li>
+            <li><span class="g-segno"><span class="mk t-aperto largo in-ztl">25</span></span><div><b>Etichetta rossa "ZTL"</b> sul segnaposto: il parcheggio è dentro una ZTL, raggiungibile solo con contrassegno.</div></li>
+            <li><span class="g-segno"><span class="g-area c"></span></span><div><b>Bordo arancione tratteggiato</b> (Milano): Area C. Si entra pagando il ticket; i parcheggi dentro hanno l'etichetta arancione "C".</div></li>
+            <li><span class="g-segno"><span class="mk varco"></span></span><div><b>Pallino rosso con centro bianco</b>: varco con telecamera all'ingresso della ZTL (visibile avvicinando la mappa).</div></li>
+            <li><span class="g-segno"><span class="io"></span></span><div><b>Punto azzurro</b>: sei tu. Il <b>cono azzurro</b> mostra dove è rivolto il telefono (su iPhone tocca il pulsante della posizione e consenti <i>Movimento e orientamento</i>). Il <b>cerchio tratteggiato</b> è il raggio di ricerca.</div></li>
+          </ul>
+          <p>Tocca un segnaposto per aprire il <b>riquadro</b> con nome, posti, tariffa e distanza: l'app lo legge ad alta voce
+            (se la lettura vocale è attiva). Il pulsante <b>Portami qui</b> apre il navigatore.</p>
+          <p>Avvicinando molto la mappa compaiono anche i singoli stalli disegnati come piccoli quadratini.</p>
+        </section>
+
+        <section id="g-pulsanti">
+          <h3>I pulsanti</h3>
+          <ul class="g-lista">
+            <li><span class="g-segno"><span class="g-barra">Cerca un indirizzo…</span></span><div><b>Cerca</b>: scrivi una via o una piazza per vedere i parcheggi lì invece che intorno a te.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.6V19l-4 2v-8.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span></span><div><b>Tipi di parcheggio</b> (imbuto in alto, accanto al raggio): apre un menu con i tipi da mostrare, tutti spuntati all'inizio: aree di sosta all'aperto, multipiano e interrati, garage e posti coperti, sosta su strada, stalli per disabili, posti liberi segnalati e in tempo reale; sotto, la tariffa: gratuiti e a pagamento. Togli la spunta a quello che non ti interessa (anche più voci insieme): un parcheggio si vede se il suo tipo e la sua tariffa sono spuntati; quelli con tariffa non indicata si vedono finché almeno una delle due tariffe è spuntata. In fondo c'è <b>Dentro le ZTL e le aree pedonali</b>: all'inizio è senza spunta, quindi i parcheggi raggiungibili solo con il contrassegno non si vedono; spuntala se ce l'hai. Il numerino arancione dice quante voci hai cambiato rispetto all'inizio; <b>Torna alle scelte iniziali</b> rimette tutto com'era.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">1 km</span></span><div><b>Raggio</b>: quanto lontano cercare, 200 m, 500 m, 1 km o 2 km.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti.</div></li>
+            <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i posti vicini e le impostazioni. Il numerino verde indica quanti posti sono sicuramente liberi.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><div><b>Aggiorna</b>: riscarica subito tutti i dati.</div></li>
+            <li><span class="g-segno"><span class="btn-help g-help">HELP</span></span><div><b>HELP</b> (in alto nella pagina Elenco, accanto alla X): apre questa guida dentro l'app.</div></li>
+            <li><span class="g-segno"><span class="g-fab verde"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v7M8.5 10h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></span><div><b>Posto libero qui</b>: segnala agli altri che dove sei c'è un posto libero.</div></li>
+            <li><span class="g-segno"><span class="g-fab rosso"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span></span><div><b>Ho parcheggiato</b>: segnala che hai appena occupato il posto dove sei e salva lì <b>la tua auto</b>.</div></li>
+            <li><span class="g-segno"><span class="mk-auto"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span></span><div><b>La tua auto</b> (segnaposto nero): dove hai lasciato l'auto. Se l'app è aperta mentre guidi, quando ti fermi per un paio di minuti salva il posto da sola e in basso compare <b>"Parcheggio salvato · Annulla"</b>. Se avevi chiuso l'app in macchina, alla riapertura a piedi lì vicino prova a capire dove hai lasciato l'auto. Se il punto non è giusto, trascina il segnaposto nel posto vero, oppure toccalo e scegli <b>Sposta dove sono</b>; <b>Portami all'auto</b> apre il navigatore a piedi. Quando riparti e superi i 50 km/h, l'auto sparisce dalla mappa e il posto dove era viene <b>segnalato libero</b> agli altri (non dopo una sosta di pochi minuti); se non eri tu a ripartire, tocca <b>Annulla</b>. Il salvataggio da solo si spegne nella pagina Elenco (SALVA DOVE PARCHEGGIO).</div></li>
+            <li><span class="g-segno"><span class="mk-auto"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></svg></span></span><div><b>Salvaschermo</b> (pulsante con la luna): schermo nero con scritte grandi, lo schermo resta acceso. Con l'auto salvata mostra una <b>freccia verso l'auto</b>, la distanza e i minuti a piedi; quando arrivi scrive "Sei arrivato". Mentre guidi mostra la velocità e i posti liberi segnalati entro 1 km. Si apre anche <b>da solo dopo 1 minuto senza toccare lo schermo</b>, se stai guidando o stai andando a piedi verso l'auto (si cambia nella pagina Elenco, SALVASCHERMO). Il salvataggio del parcheggio e la segnalazione del posto lasciato libero continuano a funzionare. Tocca lo schermo per tornare alla mappa. L'app deve restare aperta: se blocchi il telefono o passi a un'altra app, il GPS si ferma. Su iPhone, la prima volta consenti l'accesso a "Movimento e orientamento" per la freccia.</div></li>
+          </ul>
+          <p>Per ingrandire o rimpicciolire la mappa usa due dita.</p>
+        </section>
+
+        <section id="g-elenco">
+          <h3>La pagina Elenco e le impostazioni</h3>
+          <p>In alto una riga dice cosa sta facendo l'app (ricerca in corso, ora dell'ultimo aggiornamento, eventuali problemi).</p>
+          <dl class="g-def">
+            <dt>AUTO-REFRESH</dt>
+            <dd>Ogni 30, 60 o 120 secondi l'app torna sulla tua posizione e aggiorna i dati da sola. <b>0</b> la spegne. Parte da 120.
+              Si ferma quando l'app è in secondo piano o lo schermo è spento.
+              Finché è attivo, il telefono non va in standby e lo schermo resta acceso
+              (al centro della riga compare l'<b>occhio verde</b>):
+              in macchina tieni il telefono in carica, a piedi mettilo a 0 per risparmiare batteria.</dd>
+            <dt>SUONI</dt>
+            <dd>Un <b>bing</b> a ogni aggiornamento; <b>due note che scendono</b> se i dati non si possono scaricare;
+              <b>tre note che salgono</b> quando compare un nuovo posto libero segnalato da un altro utente.</dd>
+            <dt>MAPPA</dt>
+            <dd><b>Stradale</b> mostra la cartina di OpenStreetMap; <b>Stradale, nomi grandi</b> la stessa cartina con i nomi delle vie scritti il doppio più grandi (un po' meno nitida); <b>Satellite</b> mostra le foto aeree con sopra i nomi di strade e paesi,
+              utile per riconoscere i parcheggi dall'alto.</dd>
+            <dt>LETTURA VOCALE</dt>
+            <dd>Quando tocchi un segnaposto, l'app legge ad alta voce il riquadro.</dd>
+          </dl>
+          <p>Sotto trovi tre numeri riassuntivi (posti liberi nei parcheggi, posti segnalati liberi, aree di sosta in zona),
+            e l'<b>elenco</b>: prima i posti sicuramente liberi, poi gli altri dal più vicino. I tipi scelti sulla mappa valgono anche qui.
+            Tocca una riga per vederla sulla mappa.</p>
+          <p>Le scelte restano memorizzate sul telefono.</p>
+        </section>
+
+        <section id="g-segnalazioni">
+          <h3>Le segnalazioni</h3>
+          <ul class="g-punti">
+            <li>Le vedono tutti quelli che usano l'app, e restano sulla mappa per <b>2 ore</b>, sempre più trasparenti.</li>
+            <li>Per segnalare serve il <b>GPS preciso</b> (entro 60 metri): all'aperto funziona meglio.</li>
+            <li>Si può fare una segnalazione ogni 30 secondi.</li>
+            <li>Più persone usano l'app, più le segnalazioni sono utili: condividi l'indirizzo con amici e familiari.</li>
+          </ul>
+        </section>
+
+
+        <section id="g-consigli">
+          <h3>Consigli</h3>
+          <ul class="g-punti">
+            <li><b>Non usare il telefono mentre guidi.</b> Mettilo su un supporto, usa auto-refresh, suoni e lettura vocale, o fai usare l'app a chi è con te.</li>
+            <li>Metti l'icona sulla schermata Home: nella pagina Elenco tocca <b>Installa l'app</b> e segui i passaggi (su iPhone: in Safari <b>Condividi → Aggiungi alla schermata Home</b>).</li>
+            <li>Al primo avvio consenti l'accesso alla <b>posizione</b>. Tocca la mappa una volta per abilitare suoni e voce.</li>
+            <li>Con l'interruttore del <b>silenzioso</b> attivo i suoni non si sentono.</li>
+            <li>Il numero di <b>versione</b> scritto sulla mappa ti dice se hai l'ultimo aggiornamento.</li>
+          </ul>
+        </section>
+      </div>
+  </main>
+  <!-- Statistiche d'uso anonime, senza cookie: https://parcheggi.goatcounter.com
+       I dispositivi del team (segnati una volta aprendo l'app con ?gc_team=nome-dispositivo,
+       tolti con ?gc_team=off) contano a parte su https://quivicino-team.goatcounter.com -->
+  <script>
+    (function () {
+      var endpoint = "https://parcheggi.goatcounter.com/count";
+      try {
+        var q = new URLSearchParams(location.search).get("gc_team");
+        if (q === "off") { localStorage.removeItem("gc_team"); alert("Questo dispositivo ora conta come un visitatore normale."); }
+        else if (q) {
+          q = q.toLowerCase().replace(/[^a-z0-9-]/g, "");
+          if (q) { localStorage.setItem("gc_team", q); alert("Dispositivo segnato come \u201c" + q + "\u201d: le visite contano a parte."); }
+        }
+        var team = localStorage.getItem("gc_team");
+        if (team) {
+          endpoint = "https://quivicino-team.goatcounter.com/count";
+          window.goatcounter = { path: function (p) { return "/" + team + p.split("?")[0]; } };
+        }
+      } catch (e) {}
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://gc.zgo.at/count.js";
+      s.setAttribute("data-goatcounter", endpoint);
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
