@@ -29,10 +29,17 @@
   };
   if (!RAGGI.includes(stato.raggio)) stato.raggio = 15000;
   const CHIAVI_DIFF = QT.ORDINE_DIFF.map((d) => "D" + d);
+  // Sentieri NON CAI: vie di OpenStreetMap che non fanno parte di un itinerario segnato (relazione route=hiking)
+  const NONCAI = {
+    NP: { nome: "Sentieri senza segnavia", spiega: "sentieri e scalinate", colore: "#7a4b25", highway: "path|bridleway|steps" },
+    NT: { nome: "Sterrate e mulattiere", spiega: "strade di campagna e forestali", colore: "#c08a3e", highway: "track" }
+  };
+  const CHIAVI_NONCAI = Object.keys(NONCAI);
+  const chiaveValida = (k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k) || CHIAVI_NONCAI.includes(k);
   const CATEGORIE_INIZIO = cfg.categorie || CHIAVI_DIFF.concat(["R", "B", "W"]);
   {
     const scelti = leggiPref("categorie", CATEGORIE_INIZIO.join(","));
-    stato.categorie = new Set(scelti.split(",").filter((k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k)));
+    stato.categorie = new Set(scelti.split(",").filter(chiaveValida));
   }
   if (!["distanza", "nome", "lunghezza"].includes(stato.ordine)) stato.ordine = "distanza";
 
@@ -51,7 +58,7 @@
   })();
   if (link) {
     if (RAGGI.includes(link.raggio)) stato.raggio = link.raggio;
-    if (link.categorie) stato.categorie = new Set(link.categorie.filter((k) => QT.TIPI[k] || CHIAVI_DIFF.includes(k)));
+    if (link.categorie) stato.categorie = new Set(link.categorie.filter(chiaveValida));
     if (link.filtri) link.filtri.split(",").filter((f) => f === "cai" || f === "aperti").forEach((f) => stato.filtri.add(f));
     if (["distanza", "nome", "lunghezza"].includes(link.ordine)) stato.ordine = link.ordine;
     // l'indirizzo torna pulito: ricaricando la pagina si riparte dall'ultima posizione
@@ -106,6 +113,65 @@
     guida: L.layerGroup().addTo(mappa),   // linea tratteggiata da te al sentiero scelto
     io: L.layerGroup().addTo(mappa)
   };
+  // ---------- Sentieri NON CAI ----------
+  // Vie di OpenStreetMap (sentieri, scalinate, sterrate) che non fanno parte di un itinerario segnato: tratteggiate,
+  // sotto i sentieri CAI. Si chiedono a Overpass solo per la zona che si vede, da vicino (zoom 13 o più),
+  // a quadretti di 0,1° che restano in memoria finché l'app è aperta.
+  mappa.createPane("altri").style.zIndex = 390;   // sotto i sentieri (overlayPane = 400)
+  const telaAltri = L.canvas({ pane: "altri", padding: 0.3 });
+  livelli.altri = L.layerGroup().addTo(mappa);
+  const CELLA_ALTRI = 0.1, ZOOM_ALTRI = 13;
+  const celleAltri = new Map();   // "i_j" → { vie: [{h, g}] } oppure { attesa: Promise }
+  function queryAltri(s, w, n, e) {
+    const bb = `(${s.toFixed(3)},${w.toFixed(3)},${n.toFixed(3)},${e.toFixed(3)})`;
+    return `[out:json][timeout:40];way[highway~"^(path|bridleway|steps|track)$"]${bb}->.w;` +
+      `rel(bw.w)[route=hiking]->.r;way(r.r)->.in;(.w; - .in;);out tags geom${bb};`;
+  }
+  async function cellaAltri(i, j) {
+    const k = i + "_" + j;
+    const c = celleAltri.get(k);
+    if (c) return c.attesa || c;
+    const attesa = (async () => {
+      const s = i * CELLA_ALTRI, w = j * CELLA_ALTRI, q = queryAltri(s, w, s + CELLA_ALTRI, w + CELLA_ALTRI);
+      for (const url of cfg.overpass || []) {
+        try {
+          const d = await fetchJson(url, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(q) }, 60000);
+          const vie = (d.elements || []).filter((x) => x.type === "way" && x.geometry)
+            .map((x) => ({ h: x.tags.highway === "track" ? "NT" : "NP", g: x.geometry.filter(Boolean).map((p) => [p.lat, p.lon]) }));
+          const fatto = { vie };
+          celleAltri.set(k, fatto);
+          return fatto;
+        } catch (e) { console.warn("Sentieri NON CAI", url, e); }
+      }
+      celleAltri.delete(k);
+      return { vie: [] };
+    })();
+    celleAltri.set(k, { attesa });
+    return attesa;
+  }
+  let giroAltri = 0;
+  async function caricaAltri() {
+    const scelti = CHIAVI_NONCAI.filter((k) => stato.categorie.has(k));
+    const giro = ++giroAltri;
+    if (!scelti.length || mappa.getZoom() < ZOOM_ALTRI) { livelli.altri.clearLayers(); return; }
+    const b = mappa.getBounds();
+    const celle = [];
+    for (let i = Math.floor(b.getSouth() / CELLA_ALTRI); i <= Math.floor(b.getNorth() / CELLA_ALTRI); i++)
+      for (let j = Math.floor(b.getWest() / CELLA_ALTRI); j <= Math.floor(b.getEast() / CELLA_ALTRI); j++) celle.push([i, j]);
+    if (celle.length > 6) return;   // troppo lontano
+    // un quadretto alla volta: i server di Overpass rifiutano troppe richieste insieme
+    const risultati = [];
+    for (const [i, j] of celle) risultati.push(await cellaAltri(i, j));
+    if (giro !== giroAltri) return;
+    livelli.altri.clearLayers();
+    for (const r of risultati) for (const v of r.vie) {
+      if (!scelti.includes(v.h) || v.g.length < 2) continue;
+      L.polyline(v.g, { renderer: telaAltri, color: "#ffffff", weight: 5, opacity: .7, interactive: false }).addTo(livelli.altri);
+      L.polyline(v.g, { renderer: telaAltri, color: NONCAI[v.h].colore, weight: 3, dashArray: "6 5", interactive: false }).addTo(livelli.altri);
+    }
+  }
+  mappa.on("moveend", () => { if (CHIAVI_NONCAI.some((k) => stato.categorie.has(k))) caricaAltri(); });
+
   const markerPerId = new Map();
   const lineePerId = new Map();   // id sentiero → { linee: [...], bordo: [...], etichetta }
   mappa.on("dragstart", () => { stato.seguiGps = false; });
@@ -1527,11 +1593,11 @@
   // segnati costano 4 volte) il percorso sta sui sentieri. Se così BRouter non trova il percorso in tempo
   // (succede tra punti lontani dai sentieri), si riprova con una preferenza più bassa e poi con quella normale.
   const PREFERENZE_SENTIERI = [3, 1, null];
-  async function chiediBrouter(da, a, profilo, preferenza) {
+  async function chiediBrouter(da, a, profilo, preferenza, extra) {
     const url = "https://brouter.de/brouter?lonlats=" +
       `${da.lon.toFixed(6)},${da.lat.toFixed(6)}|${a.lon.toFixed(6)},${a.lat.toFixed(6)}` +
       `&profile=${encodeURIComponent(profilo)}&alternativeidx=0&format=geojson` +
-      (preferenza != null ? "&profile:hiking_routes_preference=" + preferenza : "");
+      (preferenza != null ? "&profile:hiking_routes_preference=" + preferenza : "") + (extra || "");
     const r = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
     const testo = await r.text();
     let dati = null;
@@ -1540,10 +1606,31 @@
     if (!p) throw new Error(testo.slice(0, 200) || "percorso non trovato");
     return p;
   }
+  // Profilo di Qui-Trekking (brouter/qui-trekking.brf): passa solo sui sentieri segnati e, se in «Cosa mostrare»
+  // sono scelti i sentieri NON CAI, anche su sentieri e sterrate senza segnavia; le strade servono solo a collegarli
+  // (costano il triplo). BRouter non conosce la difficoltà CAI: le difficoltà scelte non contano per il percorso.
+  // Il profilo si carica su brouter.de una volta per avvio (lì resta qualche ora) e si ricarica se BRouter non lo trova più.
+  let idProfilo = null;
+  async function profiloQuiTrekking(nuovo) {
+    if (idProfilo && !nuovo) return idProfilo;
+    const testo = await (await fetch("brouter/qui-trekking.brf?v=" + (cfg.versione || ""))).text();
+    const r = await fetch("https://brouter.de/brouter/profile", { method: "POST", headers: { "Content-Type": "text/plain" }, body: testo });
+    const j = await r.json();
+    if (!j.profileid) throw new Error(j.error || "profilo non accettato");
+    idProfilo = j.profileid;
+    return idProfilo;
+  }
+  const conNonCai = () => CHIAVI_NONCAI.some((k) => stato.categorie.has(k));
   async function calcolaPercorso(da, a, profilo) {
-    const prove = profilo === "hiking-mountain" ? PREFERENZE_SENTIERI : [null];
+    if (profilo !== "hiking-mountain") return chiediBrouter(da, a, profilo, null);
+    const extra = conNonCai() ? "&profile:anche_non_segnati=1" : "";
+    for (const nuovo of [false, true]) {
+      try { return await chiediBrouter(da, a, await profiloQuiTrekking(nuovo), null, extra); }
+      catch (e) { console.warn("BRouter, profilo Qui-Trekking", e); }
+    }
+    // se il profilo non va, il profilo standard con la preferenza per i sentieri segnati
     let errore;
-    for (const pref of prove) {
+    for (const pref of PREFERENZE_SENTIERI) {
       try { return await chiediBrouter(da, a, profilo, pref); }
       catch (e) { errore = e; console.warn("BRouter, preferenza sentieri " + pref, e); }
     }
@@ -1958,6 +2045,9 @@
   $("cat-sentieri").innerHTML = QT.ORDINE_DIFF.map((d) =>
     `<label class="cat-voce"><input type="checkbox" value="D${d}"${stato.categorie.has("D" + d) ? " checked" : ""}>` +
     `${pastiglia(d)}<span>${esc(QT.DIFFICOLTA[d].nome)}</span></label>`).join("");
+  $("cat-noncai").innerHTML = Object.entries(NONCAI).map(([k, t]) =>
+    `<label class="cat-voce"><input type="checkbox" value="${k}"${stato.categorie.has(k) ? " checked" : ""}>` +
+    `<span class="linea-noncai" style="--colore:${t.colore}"></span><span>${esc(t.nome)}<br><small>${esc(t.spiega)}</small></span></label>`).join("");
   $("cat-voci").innerHTML = Object.entries(QT.TIPI).map(([k, t]) =>
     `<label class="cat-voce"><input type="checkbox" value="${k}"${stato.categorie.has(k) ? " checked" : ""}>` +
     `<span class="mk tipo-${k}">${SIMBOLO[k]}</span><span>${esc(t.plurale)}</span></label>`).join("");
@@ -1970,7 +2060,12 @@
     if (diff.length === CHIAVI_DIFF.length && punti.length) { /* già scritto */ }
     else if (punti.length === 1) parti.push(BREVE[punti[0]]);
     else if (punti.length) parti.push(punti.length + " punti");
+    const altri = CHIAVI_NONCAI.filter((k) => stato.categorie.has(k));
+    if (altri.length) parti.push("non CAI");
     $("categoria-testo").textContent = parti.length ? parti.join(" + ") : "Nessuno";
+    // quanti sono scelti in ciascuna sezione del menu
+    [["conta-cai", diff.length, CHIAVI_DIFF.length], ["conta-noncai", altri.length, CHIAVI_NONCAI.length], ["conta-punti", punti.length, Object.keys(QT.TIPI).length]]
+      .forEach(([id, n, tot]) => { const el = $(id); el.textContent = n + "/" + tot; el.classList.toggle("attiva", n > 0); });
   }
   scriviCategorie();
   function cambiaCategoria(e) {
@@ -1978,9 +2073,10 @@
     if (e.target.checked) stato.categorie.add(k); else stato.categorie.delete(k);
     salvaPref("categorie", [...stato.categorie].join(","));
     scriviCategorie();
-    ricalcola();
+    if (CHIAVI_NONCAI.includes(k)) caricaAltri(); else ricalcola();
   }
   $("cat-sentieri").addEventListener("change", cambiaCategoria);
+  $("cat-noncai").addEventListener("change", cambiaCategoria);
   // Numero dei sentieri (segnavia) sulla mappa: dove i sentieri sono fitti si può spegnere; resta salvato sul telefono
   $("numeri-segno").innerHTML = QT.svgSimbolo(QT.SIMBOLO_CAI, 28, "123");
   $("mostra-numeri").checked = mostraNumeri;

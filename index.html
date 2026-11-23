@@ -36,11 +36,20 @@
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="cat-menu" id="cat-menu" role="group" aria-label="Cosa mostrare: puoi sceglierne più di uno" hidden>
-          <p class="cat-titolo">Sentieri <small>(per difficoltà)</small></p>
-          <div id="cat-sentieri"></div>
-          <label class="cat-voce"><input type="checkbox" id="mostra-numeri"><span id="numeri-segno"></span><span>Numero dei sentieri sulla mappa</span></label>
-          <p class="cat-titolo">Punti</p>
-          <div id="cat-voci"></div>
+          <details class="cat-sez" id="sez-cai">
+            <summary><span class="cat-sez-nome">Sentieri CAI <small>(segnati, per difficoltà)</small></span><span class="cat-conta" id="conta-cai"></span></summary>
+            <div id="cat-sentieri"></div>
+            <label class="cat-voce"><input type="checkbox" id="mostra-numeri"><span id="numeri-segno"></span><span>Numero dei sentieri sulla mappa</span></label>
+          </details>
+          <details class="cat-sez" id="sez-noncai">
+            <summary><span class="cat-sez-nome">Sentieri NON CAI <small>(su OpenStreetMap, senza segnavia)</small></span><span class="cat-conta" id="conta-noncai"></span></summary>
+            <div id="cat-noncai"></div>
+            <p class="cat-nota">Si vedono da vicino (zoom 13 o più). Se li scegli, anche il percorso a piedi può passarci.</p>
+          </details>
+          <details class="cat-sez" id="sez-punti">
+            <summary><span class="cat-sez-nome">Punti</span><span class="cat-conta" id="conta-punti"></span></summary>
+            <div id="cat-voci"></div>
+          </details>
           <button class="cat-ok" id="cat-ok" type="button">Fatto</button>
         </div>
       </div>
@@ -121,14 +130,14 @@
         <div class="percorso-opz">
           <label>Percorso
             <select id="perc-profilo">
-              <option value="hiking-mountain" selected>Sui sentieri</option>
+              <option value="hiking-mountain" selected>Sui sentieri scelti</option>
               <option value="shortest">Il più corto</option>
             </select>
           </label>
         </div>
         <p class="perc-errore" id="perc-errore" role="alert" hidden></p>
         <button class="btn-perc-vai" id="btn-perc-vai" type="submit">Calcola il percorso</button>
-        <p class="perc-nota">Percorso a piedi calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
+        <p class="perc-nota">Passa sui sentieri CAI e, se li hai scelti in «Cosa mostrare», su quelli NON CAI; le strade solo per collegarli. Calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
       </form>
 
       <div class="percorso-info" id="percorso-info" hidden>
@@ -350,7 +359,7 @@
             <b>segnaposto</b> accanto a ogni casella scegli il punto toccando la mappa. Nella scheda di un rifugio, bivacco o altro punto,
             <b>A piedi fin qui</b> lo mette come arrivo.</p>
           <ul class="g-lista">
-            <li><b>Sui sentieri</b> sta il più possibile sui <b>sentieri segnati</b>, quelli colorati sulla mappa, anche se così il giro è più lungo; <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
+            <li><b>Sui sentieri scelti</b> passa solo sui <b>sentieri CAI</b> (quelli colorati sulla mappa) e, se in <i>Cosa mostrare</i> hai scelto i <b>sentieri NON CAI</b>, anche su quelli; strade e vie di paese solo per collegarli. Le difficoltà scelte non contano per il percorso. <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
             <li>Sulla mappa il percorso è una linea <b style="color:#d61f8c">fucsia</b> con <b>A</b> (partenza) e <b>B</b> (arrivo).</li>
             <li>In basso un riquadro dice lunghezza, salita, discesa, tempo stimato e quota minima e massima; sotto c'è il <b>profilo altimetrico</b>:
               tocca o trascina il dito sul profilo e un pallino ti mostra quel punto sulla mappa, con distanza dalla partenza e quota.</li>

@@ -802,3 +802,23 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .pop-vai.pop-apiedi { background: var(--superficie); color: var(--percorso); border: 2px solid var(--percorso); }
 @media (prefers-reduced-motion: reduce) { .percorso { animation: none; } }
+
+/* ---- Menu «Cosa mostrare» in tre sezioni che si aprono e chiudono ---- */
+.cat-sez { border-radius: 12px; }
+.cat-sez + .cat-sez { margin-top: 6px; border-top: 1px solid var(--bordo); padding-top: 6px; }
+.cat-sez > summary {
+  display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px; border-radius: 10px;
+  list-style: none; cursor: pointer; font: 700 17px/1.2 var(--font-display);
+}
+.cat-sez > summary::-webkit-details-marker { display: none; }
+.cat-sez > summary::before {
+  content: ""; flex: none; width: 9px; height: 9px; margin: 0 4px 0 2px;
+  border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s;
+}
+.cat-sez[open] > summary::before { transform: rotate(45deg); }
+.cat-sez-nome { flex: 1; min-width: 0; }
+.cat-sez-nome small { display: block; font: 500 13px/1.2 var(--font-body); color: var(--testo-2); }
+.cat-conta { flex: none; min-width: 26px; padding: 3px 7px; border-radius: 999px; text-align: center; background: var(--bg); color: var(--testo-2); font: 700 14px/1 var(--font-body); }
+.cat-conta.attiva { background: var(--blu); color: var(--su-colore); }
+.cat-nota { margin: 4px 8px 6px; font-size: 13px; color: var(--testo-2); }
+.linea-noncai { flex: none; width: 30px; height: 0; border-top: 4px dashed var(--colore); }
