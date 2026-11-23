@@ -1606,31 +1606,12 @@
     if (!p) throw new Error(testo.slice(0, 200) || "percorso non trovato");
     return p;
   }
-  // Profilo di Qui-Trekking (brouter/qui-trekking.brf): passa solo sui sentieri segnati e, se in «Cosa mostrare»
-  // sono scelti i sentieri NON CAI, anche su sentieri e sterrate senza segnavia; le strade servono solo a collegarli
-  // (costano il triplo). BRouter non conosce la difficoltà CAI: le difficoltà scelte non contano per il percorso.
-  // Il profilo si carica su brouter.de una volta per avvio (lì resta qualche ora) e si ricarica se BRouter non lo trova più.
-  let idProfilo = null;
-  async function profiloQuiTrekking(nuovo) {
-    if (idProfilo && !nuovo) return idProfilo;
-    const testo = await (await fetch("brouter/qui-trekking.brf?v=" + (cfg.versione || ""))).text();
-    const r = await fetch("https://brouter.de/brouter/profile", { method: "POST", headers: { "Content-Type": "text/plain" }, body: testo });
-    const j = await r.json();
-    if (!j.profileid) throw new Error(j.error || "profilo non accettato");
-    idProfilo = j.profileid;
-    return idProfilo;
-  }
+  // Con i sentieri NON CAI accesi in «Cosa mostrare» il profilo resta quello normale: sentieri segnati e non segnati alla pari
   const conNonCai = () => CHIAVI_NONCAI.some((k) => stato.categorie.has(k));
   async function calcolaPercorso(da, a, profilo) {
-    if (profilo !== "hiking-mountain") return chiediBrouter(da, a, profilo, null);
-    const extra = conNonCai() ? "&profile:anche_non_segnati=1" : "";
-    for (const nuovo of [false, true]) {
-      try { return await chiediBrouter(da, a, await profiloQuiTrekking(nuovo), null, extra); }
-      catch (e) { console.warn("BRouter, profilo Qui-Trekking", e); }
-    }
-    // se il profilo non va, il profilo standard con la preferenza per i sentieri segnati
+    const prove = profilo === "hiking-mountain" && !conNonCai() ? PREFERENZE_SENTIERI : [null];
     let errore;
-    for (const pref of PREFERENZE_SENTIERI) {
+    for (const pref of prove) {
       try { return await chiediBrouter(da, a, profilo, pref); }
       catch (e) { errore = e; console.warn("BRouter, preferenza sentieri " + pref, e); }
     }
@@ -1727,11 +1708,23 @@
       num.push(`<span>${QT.formattaOre(tempoPercorso(p))} <small>stima</small></span>`);
       if (p.min != null) num.push(`<small>quota ${p.min}–${QT.formattaQuota(p.max)}</small>`);
       $("pi-num").innerHTML = num.join("");
-      const tot = p.fondo.sentiero + p.fondo.sterrata + p.fondo.strada;
-      const pc = (x) => Math.round(x / tot * 100);
-      const segnati = tot ? `<b>sui sentieri segnati ${pc(p.segnati || 0)}%</b><br>fondo: ` : "";
-      $("pi-fondo").innerHTML = segnati + (tot ? [["sentiero", "sentiero", COLORE_PERCORSO], ["sterrata", "sterrata", "#b8873b"], ["strada", "strada", "#7a8291"]]
-        .filter(([k]) => p.fondo[k] / tot >= 0.01).map(([k, t, c]) => `<span><i style="background:${c}"></i>${t} ${pc(p.fondo[k])}%</span>`).join(" · ") : "");
+      // Sentieri usati, nell'ordine (tocca per aprire la scheda), e avviso per i tratti fuori dai sentieri CAI
+      const u = QT.sentieriUsati(p, p.sentieri || stato.sentieri);
+      p.usati = u.usati;
+      const kmCorti = (m) => QT.formattaDistanza(m);
+      const righe = [];
+      righe.push(u.usati.length
+        ? `<div class="pi-usati"><span class="pi-etic">Sentieri usati</span>${u.usati.map((x, i) =>
+          `<button type="button" class="pi-sent" data-i="${i}">${segnavia(x.s, 22)}<span>${esc(x.s.r || QT.titoloSentiero(x.s))}</span><small>${kmCorti(x.metri)}</small></button>`).join("")}</div>`
+        : '<p class="pi-avviso">Nessun sentiero CAI dell\'app su questo percorso.</p>');
+      if (u.segnatiAltri >= 80) righe.push(`<p class="pi-nota">e ${kmCorti(u.segnatiAltri)} su altri sentieri segnati, fuori dalla zona caricata</p>`);
+      const nonCai = u.fuori.sentiero + u.fuori.sterrata;
+      if (nonCai >= 150) {
+        righe.push(`<p class="pi-avviso">⚠ ${kmCorti(nonCai)} su sentieri NON CAI (senza segnavia)` +
+          (u.fuori.strada >= 50 ? `, ${kmCorti(u.fuori.strada)} su strada` : "") +
+          ": possono essere poco tracciati, difficili o chiusi. Controlla sul posto.</p>");
+      } else if (nonCai + u.fuori.strada >= 50) righe.push(`<p class="pi-nota">${kmCorti(nonCai + u.fuori.strada)} fuori dai sentieri, su strade e vie di paese per collegarli</p>`);
+      $("pi-fondo").innerHTML = righe.join("");
       disegnaProfilo(p);
     }
     posizionaAzioni();
@@ -1809,6 +1802,21 @@
     aggiornaModoPercorso();
   }
 
+  // Sentieri dell'app lungo tutto il percorso (anche fuori dal raggio caricato), dalle tessere del sito
+  async function sentieriLungoPercorso(p) {
+    try {
+      const ind = await leggiIndice();
+      if (!ind || !ind.tessere) return null;
+      const passo = ind.passo || 0.1, nomi = new Set();
+      p.punti.forEach(([la, lo]) => {
+        for (const d of [-0.002, 0.002]) nomi.add(`t_${Math.floor((la + d) / passo)}_${Math.floor((lo + d) / passo)}.json`);
+      });
+      const r = await daTessere("", new Set(ind.tessere), [...nomi]);
+      const visti = new Set(r.sentieri.map((x) => x.i));
+      return r.sentieri.concat(stato.sentieri.filter((x) => !visti.has(x.i)));
+    } catch (e) { console.warn("Sentieri lungo il percorso", e); return null; }
+  }
+
   // Avvia il percorso: la linea sulla mappa, il profilo in basso e la navigazione con la freccia
   function avviaPercorso(r, da, a, profilo) {
     stato.percorso = Object.assign(r, { da: da.nome, daGps: !!da.gps, a: a.nome, profilo });
@@ -1817,6 +1825,11 @@
     chiudiAnteprima();
     stato.seguiGps = false;
     // per la freccia il percorso è un "sentiero" con una sola linea, già disegnato qui
+    sentieriLungoPercorso(r).then((lista) => {
+      if (!lista || stato.percorso !== r) return;
+      r.sentieri = lista;
+      aggiornaModoPercorso();
+    });
     stato.percorso.sentiero = { i: "percorso", percorso: true, g: [r.punti], d: "ND", l: r.metri, n: da.nome + " → " + a.nome };
     scegliSentiero(stato.percorso.sentiero);
     inquadraPercorso();
@@ -1874,6 +1887,11 @@
   $("btn-perc-inverti").addEventListener("click", () => {
     const da = puntoCampo("perc-da"), a = puntoCampo("perc-a");
     impostaCampo("perc-da", a); impostaCampo("perc-a", da);
+  });
+  $("pi-fondo").addEventListener("click", (e) => {
+    const b = e.target.closest(".pi-sent");
+    const p = percorsoAttivo();
+    if (b && p && p.usati && p.usati[+b.dataset.i]) mostraSentiero(p.usati[+b.dataset.i].s);
   });
   $("btn-perc-gpx").addEventListener("click", () => {
     const p = percorsoAttivo();
