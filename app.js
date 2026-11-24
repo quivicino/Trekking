@@ -2212,9 +2212,28 @@
   // All'avvio la lettura vocale è sempre spenta: si accende dalla pagina Elenco, per questa volta
   let letturaAttiva = false;
   const sintesi = window.speechSynthesis;
+  // Sceglie la voce italiana più naturale installata sul telefono, in quest'ordine:
+  // Premium, poi Natural/Neural, poi Migliorata (Enhanced), poi Siri, poi Google, poi le altre.
+  // Le voci "buffe" dell'iPhone (Eddy, Flo, Nonna, Nonno, Reed, Rocko, Sandy, Shelley) sono escluse.
+  const VOCI_BUFFE = /eloquence|\b(eddy|flo|grandma|grandpa|nonna|nonno|reed|rocko|sandy|shelley)\b/i;
+  function punteggioVoce(v) {
+    const n = (v.name || "") + " " + (v.voiceURI || "");
+    let p = 0;
+    if (/premium/i.test(n)) p = 50;
+    else if (/natural|neural/i.test(n)) p = 40;
+    else if (/enhanced|migliorat/i.test(n)) p = 30;
+    else if (/siri/i.test(n)) p = 20;
+    else if (/google/i.test(n)) p = 10;
+    if (/^it[-_]IT/i.test(v.lang)) p += 2;
+    if (v.localService) p += 1;
+    return p;
+  }
   function vocItaliana() {
     const voci = sintesi ? sintesi.getVoices() : [];
-    return voci.find((v) => /^it[-_]IT/i.test(v.lang) && v.localService) || voci.find((v) => /^it/i.test(v.lang)) || null;
+    const it = voci.filter((v) => /^it([-_]|$)/i.test(v.lang || ""));
+    const buone = it.filter((v) => !VOCI_BUFFE.test((v.name || "") + " " + (v.voiceURI || "")));
+    const scelta = (buone.length ? buone : it).slice().sort((a, b) => punteggioVoce(b) - punteggioVoce(a));
+    return scelta[0] || null;
   }
   function leggi(testo) {
     if (!sintesi || !testo) return;
