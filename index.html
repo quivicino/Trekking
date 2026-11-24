@@ -3,94 +3,170 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Qui-Parking</title>
-  <meta name="description" content="Posti auto e parcheggi liberi entro 1 km dalla tua posizione">
-  <meta name="theme-color" content="#1b4f9c">
+  <title>Qui-Trekking</title>
+  <meta name="description" content="Sentieri CAI con difficoltà, lunghezza e dislivello, rifugi, bivacchi e fontanelle vicino a te, da OpenStreetMap">
+  <meta name="theme-color" content="#2d5a27">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="favicon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Qui-Trekking">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand" aria-label="Qui-Parking">
-        <img class="logo" src="icon-192.png" alt="" width="50" height="50">
-        <span class="brand-name">Qui-Parking</span>
+      <div class="brand" aria-label="Qui-Trekking">
+        <img class="logo" src="icon-192.png?v=8" alt="" width="50" height="50">
+        <span class="brand-name">Qui-Trekking</span>
       </div>
       <form class="cerca" id="form-cerca" role="search">
-        <label for="cerca-indirizzo" class="sr-only">Cerca un indirizzo</label>
-        <input id="cerca-indirizzo" type="search" placeholder="Cerca un indirizzo…" autocomplete="off" enterkeyhint="search">
+        <label for="cerca-indirizzo" class="sr-only">Cerca un luogo</label>
+        <input id="cerca-indirizzo" type="search" placeholder="Cerca…" autocomplete="off" enterkeyhint="search">
       </form>
-      <div class="filtri-menu" id="filtri-menu">
-        <button class="filtri-btn" id="btn-filtri" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="filtri-lista" title="Filtri">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.6V19l-4 2v-8.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-          <span class="sr-only">Filtri</span>
-          <span class="filtri-num" id="filtri-num" hidden></span>
+      <div class="carb" id="cat-box">
+        <button class="cat-btn" id="categoria" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="cat-menu">
+          <span class="sr-only">Cosa mostrare: </span><span id="categoria-testo">Cosa mostrare</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <div class="filtri-lista" id="filtri-lista" role="group" aria-label="Filtri" hidden>
-          <p class="filtri-titolo">Mostra <small>(togli la spunta per nascondere)</small></p>
-          <label><input type="checkbox" data-voce="aperto" checked><i class="pallino t-aperto" aria-hidden="true"></i><span>Aree di sosta all'aperto</span></label>
-          <label><input type="checkbox" data-voce="multipiano" checked><i class="pallino t-multipiano" aria-hidden="true"></i><span>Multipiano e interrati</span></label>
-          <label><input type="checkbox" data-voce="garage" checked><i class="pallino t-garage" aria-hidden="true"></i><span>Garage e posti coperti</span></label>
-          <label><input type="checkbox" data-voce="strada" checked><i class="pallino t-strada" aria-hidden="true"></i><span>Sosta su strada</span></label>
-          <label><input type="checkbox" data-voce="disabili" checked><i class="pallino t-disabili" aria-hidden="true"></i><span>Stalli per disabili</span></label>
-          <label><input type="checkbox" data-voce="reale" checked><i class="pallino t-reale" aria-hidden="true"></i><span>Posti liberi segnalati e in tempo reale</span></label>
-          <p class="filtri-titolo filtri-sezione">Tariffa</p>
-          <label><input type="checkbox" data-voce="gratuito" checked><span>Gratuiti</span></label>
-          <label><input type="checkbox" data-voce="pagamento" checked><span>A pagamento</span></label>
-          <p class="filtri-titolo filtri-sezione">Zone</p>
-          <label><input type="checkbox" data-voce="ztl"><i class="tag-ztl" aria-hidden="true">ZTL</i><span>Dentro le ZTL e le aree pedonali <small>(solo con contrassegno)</small></span></label>
-          <button class="filtri-azzera" id="filtri-azzera" type="button">Torna alle scelte iniziali</button>
+        <div class="cat-menu" id="cat-menu" role="group" aria-label="Cosa mostrare: puoi sceglierne più di uno" hidden>
+          <details class="cat-sez" id="sez-cai">
+            <summary><span class="cat-sez-nome">Sentieri CAI <small>(segnati, per difficoltà)</small></span><span class="cat-conta" id="conta-cai"></span></summary>
+            <div id="cat-sentieri"></div>
+            <label class="cat-voce"><input type="checkbox" id="mostra-numeri"><span id="numeri-segno"></span><span>Numero dei sentieri sulla mappa</span></label>
+          </details>
+          <details class="cat-sez" id="sez-noncai">
+            <summary><span class="cat-sez-nome">Sentieri NON CAI <small>(su OpenStreetMap, senza segnavia)</small></span><span class="cat-conta" id="conta-noncai"></span></summary>
+            <div id="cat-noncai"></div>
+            <p class="cat-nota">Si vedono da vicino (zoom 13 o più). Se li scegli, anche il percorso a piedi può passarci.</p>
+          </details>
+          <details class="cat-sez" id="sez-punti">
+            <summary><span class="cat-sez-nome">Punti</span><span class="cat-conta" id="conta-punti"></span></summary>
+            <div id="cat-voci"></div>
+          </details>
+          <button class="cat-ok" id="cat-ok" type="button">Fatto</button>
         </div>
       </div>
       <label class="raggio">
         <span class="sr-only">Raggio</span>
         <select id="raggio">
-          <option value="200">200 m</option>
-          <option value="500">500 m</option>
-          <option value="1000" selected>1 km</option>
           <option value="2000">2 km</option>
+          <option value="5000">5 km</option>
+          <option value="10000">10 km</option>
+          <option value="15000" selected>15 km</option>
+          <option value="25000">25 km</option>
         </select>
       </label>
     </header>
 
     <main class="corpo">
-      <div id="mappa" class="mappa" role="application" aria-label="Mappa dei parcheggi"></div>
+      <div id="mappa" class="mappa" role="application" aria-label="Mappa dei sentieri, rifugi e fontanelle"></div>
+
+      <div class="guida-rotta" id="guida-rotta" role="status" aria-live="polite" hidden>
+        <div class="gr-bussola" aria-hidden="true">
+          <span class="gr-nord">N</span>
+          <svg id="guida-freccia" class="gr-freccia" viewBox="0 0 24 24" width="40" height="40"><path d="M12 2 19 20 12 16 5 20Z" fill="currentColor"/></svg>
+        </div>
+        <div class="gr-testi">
+          <b id="guida-velocita">– km/h</b>
+          <span id="guida-testo"></span>
+        </div>
+        <button type="button" class="gr-esci" id="guida-esci" aria-label="Esci dalla navigazione"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+      </div>
 
       <div class="fab-col">
         <button class="fab" id="btn-centra" type="button" title="Torna alla mia posizione" aria-label="Torna alla mia posizione">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         </button>
-        <button class="fab fab-nero" id="btn-elenco" type="button" title="Elenco dei posti vicini" aria-label="Apri l'elenco dei posti vicini" aria-controls="pannello" aria-expanded="false">
+        <button class="fab fab-nero" id="btn-elenco" type="button" title="Elenco dei sentieri e dei punti vicini" aria-label="Apri l'elenco dei sentieri e dei punti vicini" aria-controls="pannello" aria-expanded="false">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg>
           <span class="badge" id="badge-elenco" hidden></span>
-        </button>
-        <button class="fab fab-nero" id="btn-salvaschermo" type="button" title="Salvaschermo: distanza e direzione dell'auto" aria-label="Apri il salvaschermo con distanza e direzione dell'auto">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
         </button>
         <button class="fab" id="btn-aggiorna" type="button" title="Aggiorna" aria-label="Aggiorna i dati">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
+        <button class="fab" id="btn-percorso" type="button" title="Percorso a piedi da A a B" aria-label="Percorso a piedi da A a B" aria-controls="percorso" aria-expanded="false" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg>
+        </button>
+      </div>
+
+      <div class="percorso-barra" id="percorso-barra" hidden>
+        <button class="percorso-testo" id="percorso-testo" type="button" aria-label="Modifica il percorso"></button>
+        <button class="percorso-esci" id="btn-esci-percorso" type="button" aria-label="Chiudi il percorso a piedi">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <form class="percorso" id="percorso" aria-labelledby="percorso-titolo" hidden>
+        <div class="percorso-testa">
+          <h2 id="percorso-titolo">Percorso a piedi</h2>
+          <button class="chiudi" id="btn-chiudi-form-percorso" type="button" aria-label="Chiudi">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="percorso-campi">
+          <div class="percorso-righe">
+            <div class="campo"><span class="perc-pin da">A</span>
+              <label class="sr-only" for="perc-da">Partenza</label>
+              <input id="perc-da" type="search" placeholder="La mia posizione" autocomplete="off" enterkeyhint="next">
+              <button class="perc-mappa" type="button" data-campo="perc-da" title="Scegli la partenza sulla mappa" aria-label="Scegli la partenza sulla mappa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5c0 4.8 6.5 12.5 6.5 12.5s6.5-7.7 6.5-12.5A6.5 6.5 0 0 0 12 2.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.4" fill="currentColor"/></svg></button>
+            </div>
+            <div class="campo"><span class="perc-pin a">B</span>
+              <label class="sr-only" for="perc-a">Arrivo</label>
+              <input id="perc-a" type="search" placeholder="Arrivo: rifugio, cima, paese…" autocomplete="off" enterkeyhint="go">
+              <button class="perc-mappa" type="button" data-campo="perc-a" title="Scegli l'arrivo sulla mappa" aria-label="Scegli l'arrivo sulla mappa"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5c0 4.8 6.5 12.5 6.5 12.5s6.5-7.7 6.5-12.5A6.5 6.5 0 0 0 12 2.5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.4" fill="currentColor"/></svg></button>
+            </div>
+          </div>
+          <button class="perc-inverti" id="btn-perc-inverti" type="button" title="Scambia partenza e arrivo" aria-label="Scambia partenza e arrivo">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 4v15M8 4 4.5 7.5M8 4l3.5 3.5M16 20V5M16 20l-3.5-3.5M16 20l3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="percorso-opz">
+          <label>Percorso
+            <select id="perc-profilo">
+              <option value="hiking-mountain" selected>Sui sentieri scelti</option>
+              <option value="shortest">Il più corto</option>
+            </select>
+          </label>
+        </div>
+        <p class="perc-errore" id="perc-errore" role="alert" hidden></p>
+        <button class="btn-perc-vai" id="btn-perc-vai" type="submit">Calcola il percorso</button>
+        <p class="perc-nota">Preferisce i sentieri CAI; quelli NON CAI valgono uguale solo se li hai accesi in «Cosa mostrare». Calcolato da BRouter con i dati di OpenStreetMap: prima di partire controlla che sia adatto a te.</p>
+      </form>
+
+      <div class="percorso-info" id="percorso-info" hidden>
+        <div class="pi-testa">
+          <div class="pi-num" id="pi-num"></div>
+          <button class="pi-chiudi" id="btn-pi-chiudi" type="button" aria-label="Chiudi il riquadro del percorso (il percorso resta sulla mappa)">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="pi-profilo" id="pi-profilo" role="img" aria-label="Profilo altimetrico del percorso"></div>
+        <div class="pi-fondo" id="pi-fondo"></div>
+        <div class="pi-sotto">
+          <button class="pi-gpx" id="btn-perc-gpx" type="button">Salva GPX</button>
+        </div>
       </div>
 
       <div class="fab-azioni">
-        <button class="fab fab-verde" id="btn-libero" type="button" title="Segnala un posto libero qui" aria-label="Segnala un posto libero dove ti trovi">
-          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v7M8.5 10h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <button class="fab fab-rifugio" id="btn-rifugio" type="button" title="Il rifugio più vicino" aria-label="Mostra il rifugio più vicino, aperto se possibile">
+          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg>
         </button>
-        <button class="fab fab-rosso" id="btn-parcheggiato" type="button" title="Ho parcheggiato qui" aria-label="Ho parcheggiato qui: segna il posto come occupato">
-          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="7.5" cy="14.3" r="1.1" fill="var(--rosso-icona)"/><circle cx="16.5" cy="14.3" r="1.1" fill="var(--rosso-icona)"/></svg>
+        <button class="fab fab-acqua" id="btn-acqua" type="button" title="La fontanella più vicina" aria-label="Mostra la fontanella più vicina">
+          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/></svg>
         </button>
       </div>
     </main>
 
-    <section class="pannello" id="pannello" aria-label="Posti vicini" hidden>
+    <section class="pannello" id="pannello" aria-label="Sentieri e punti vicini" hidden>
       <header class="pannello-testa">
-        <h2>Qui-Parking</h2>
+        <h2>Qui-Trekking</h2>
         <a class="condividi" id="btn-condividi" href="https://wa.me/" target="_blank" rel="noopener" aria-label="Condividi l'app con un amico su WhatsApp">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.6 8.4c.2-.5.5-.5.8-.5h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5.6 1 1.4 1.8 2.4 2.4.2.1.4.1.5 0l.6-.7c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3-.1.7-.6.9-.5.3-1.4.5-2.6.1a9 9 0 0 1-4.6-4.3c-.6-1.2-.4-2.2-.2-2.7Z" fill="currentColor"/></svg>
           <span class="condividi-testo">Condividi</span>
@@ -104,22 +180,28 @@
       <div class="pannello-corpo">
         <div class="stato" id="stato" role="status" aria-live="polite">Cerco la tua posizione…</div>
 
+        <a class="emergenza" href="tel:112">Emergenza in montagna? <b>Chiama il 112</b> (soccorso alpino)</a>
+
         <button class="btn-installa" id="btn-installa" type="button" hidden>
-          <img src="icon-192.png" alt="" width="36" height="36">
-          <span><b>Installa l'app</b><small>Metti l'icona di Qui-Parking sulla schermata Home</small></span>
+          <img src="icon-192.png?v=8" alt="" width="36" height="36">
+          <span><b>Installa l'app</b><small>Metti l'icona di Qui-Trekking sulla schermata Home</small></span>
         </button>
+
+        <section class="salvati" id="salvati" aria-labelledby="salvati-titolo" hidden>
+          <h3 id="salvati-titolo">Salvati per l'uso senza rete</h3>
+          <ol class="lista" id="lista-salvati"></ol>
+        </section>
 
         <label class="auto" for="auto-refresh">
           <span>AUTO-REFRESH</span>
           <span class="occhio" id="occhio" hidden title="Schermo sempre acceso"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg></span>
           <select id="auto-refresh">
-            <option value="0">0 · spento</option>
+            <option value="0" selected>0 · spento</option>
             <option value="30">30 s</option>
             <option value="60">60 s</option>
-            <option value="120" selected>120 s</option>
+            <option value="120">120 s</option>
           </select>
         </label>
-        <p class="nota-schermo" id="nota-schermo" hidden></p>
 
         <label class="auto" for="suoni">
           <span>SUONI</span>
@@ -132,52 +214,61 @@
         <label class="auto" for="sfondo">
           <span>MAPPA</span>
           <select id="sfondo">
-            <option value="stradale" selected>Stradale</option>
+            <option value="topo" selected>Topografica</option>
+            <option value="stradale">Stradale</option>
             <option value="grande">Stradale, nomi grandi</option>
             <option value="satellite">Satellite</option>
-          </select>
-        </label>
-
-        <label class="auto" for="parcheggio-auto">
-          <span>SALVA DOVE PARCHEGGIO</span>
-          <select id="parcheggio-auto">
-            <option value="1" selected>Da solo</option>
-            <option value="0">Spento</option>
-          </select>
-        </label>
-
-        <label class="auto" for="salvaschermo-dopo">
-          <span>SALVASCHERMO</span>
-          <select id="salvaschermo-dopo">
-            <option value="1" selected>Da solo dopo 1 min</option>
-            <option value="0">Solo col pulsante</option>
           </select>
         </label>
 
         <label class="auto" for="lettura" id="riga-lettura">
           <span>LETTURA VOCALE</span>
           <select id="lettura">
-            <option value="1" selected>Attiva</option>
-            <option value="0">Spenta</option>
+            <option value="1">Attiva</option>
+            <option value="0" selected>Spenta</option>
           </select>
         </label>
 
         <div class="sommario" id="sommario">
-          <div class="kpi kpi-reale"><b id="k-reale">–</b><span>liberi ora<br>in parcheggi</span></div>
-          <div class="kpi kpi-segn"><b id="k-segn">–</b><span>posti segnalati<br>liberi</span></div>
-          <div class="kpi kpi-osm"><b id="k-osm">–</b><span>aree di sosta<br>in zona</span></div>
+          <div class="kpi kpi-osm"><b id="k-n">–</b><span>sentieri<br>nel raggio</span></div>
+          <div class="kpi kpi-rif"><b id="k-rif">–</b><span>rifugi e<br>bivacchi</span></div>
+          <div class="kpi kpi-acqua"><b id="k-acqua">–</b><span>fontanella<br>più vicina</span></div>
+        </div>
+
+        <div class="filtri" role="group" aria-label="Ordine e filtri">
+          <button class="chip ordine" type="button" data-ordine="distanza" aria-pressed="true">Per distanza</button>
+          <button class="chip ordine" type="button" data-ordine="nome" aria-pressed="false">Per nome</button>
+          <button class="chip ordine" type="button" data-ordine="lunghezza" aria-pressed="false">Per lunghezza</button>
+          <span class="sep" aria-hidden="true"></span>
+          <button class="chip filtro" type="button" data-filtro="cai" aria-pressed="false">Solo sentieri CAI</button>
+          <button class="chip filtro" type="button" data-filtro="aperti" aria-pressed="false">Rifugi aperti ora</button>
         </div>
 
         <ol class="lista" id="lista"></ol>
 
         <footer class="fonti">
-          Dati: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
-          <span id="fonti-extra"></span>.
-          ZTL: open data dei Comuni di Milano (CC BY 4.0), Bergamo e Cremona, mappa dei varchi del Comune di Pavia, OpenStreetMap; fa sempre fede la segnaletica.
-          Le aree di sosta OSM indicano dove si può parcheggiare, non se c'è posto in questo momento.
+          Dati: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> e chi contribuisce
+          (licenza ODbL); mappa topografica © <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA);
+          quote del terreno da <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM);
+          percorso a piedi da A a B con <a href="https://brouter.de" target="_blank" rel="noopener">BRouter</a>;
+          percorribilità e tempi dal <a href="https://osm2cai.cai.it" target="_blank" rel="noopener">Catasto sentieri CAI</a> (OSM2CAI);
+          in Sardegna anche i sentieri di <a href="https://www.sardegnasentieri.it" target="_blank" rel="noopener">Sardegna Sentieri</a>
+          © Agenzia Forestas (<a href="https://www.sardegnasentieri.it/pagina-base/note-legali" target="_blank" rel="noopener">CC BY-NC-SA</a>).
+          Le informazioni sono inserite da volontari e possono essere incomplete o non aggiornate: prima di partire controlla
+          meteo, stato dei sentieri e apertura dei rifugi. Se trovi un errore puoi correggerlo su OpenStreetMap.
         </footer>
         <p class="versione" id="elenco-versione"></p>
       </div>
+    </section>
+
+    <section class="pannello scheda" id="scheda" aria-labelledby="scheda-titolo" hidden>
+      <header class="pannello-testa">
+        <h2 id="scheda-titolo">Scheda</h2>
+        <button class="chiudi" id="btn-chiudi-scheda" type="button" aria-label="Chiudi la scheda e torna alla mappa">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="pannello-corpo scheda-corpo" id="scheda-contenuto"></div>
     </section>
 
     <section class="pannello guida" id="guida" aria-label="Guida all'app" hidden>
@@ -189,100 +280,153 @@
       </header>
 
       <div class="pannello-corpo guida-corpo">
-        <p class="g-intro"><b>Qui-Parking</b> ti mostra dove parcheggiare vicino a te: i parcheggi e le strade con sosta,
-          i posti liberi in questo momento dove il Comune li pubblica, e i posti che altri utenti hanno appena visto liberarsi.</p>
+        <p class="g-intro"><b>Qui-Trekking</b> ti mostra i sentieri vicino a te, colorati secondo la difficoltà CAI, con numero, segnavia,
+          lunghezza e dislivello, e poi rifugi, bivacchi e fontanelle. I dati vengono da OpenStreetMap, la mappa libera fatta da volontari.</p>
+        <p class="g-avviso">In emergenza chiama il <a href="tel:112">112</a>: attiva il Soccorso alpino. Prima di partire controlla meteo e stato del sentiero.</p>
         <p class="g-versione" id="guida-versione"></p>
 
         <nav class="g-indice" aria-label="Argomenti">
-          <a href="#g-mappa">Segnaposto</a><a href="#g-pulsanti">Pulsanti</a><a href="#g-elenco">Elenco e impostazioni</a>
-          <a href="#g-segnalazioni">Segnalazioni</a><a href="#g-consigli">Consigli</a>
+          <a href="#g-difficolta">Difficoltà</a><a href="#g-mappa">Segnaposto</a><a href="#g-pulsanti">Pulsanti</a>
+          <a href="#g-percorso">Percorso a piedi</a><a href="#g-elenco">Elenco e impostazioni</a><a href="#g-dati">I dati</a><a href="#g-consigli">Consigli</a>
         </nav>
+
+        <section id="g-difficolta">
+          <h3>Sentieri e difficoltà</h3>
+          <p>Ogni sentiero è una linea colorata secondo la scala di difficoltà del CAI. Ingrandendo la mappa compare il
+            <b>segnavia</b> con il numero del sentiero, come quello dipinto su sassi e alberi.</p>
+          <ul class="g-lista" id="g-diff"></ul>
+          <p>Tocca la linea o il segnavia: il sentiero si evidenzia e compare un fumetto con il segnavia e il nome. Tocca un punto vuoto
+            della mappa per chiuderlo. Tocca il fumetto per aprire la <b>scheda del sentiero</b>, una pagina a tutto schermo: difficoltà, lunghezza,
+            dislivello in salita e in discesa, quota minima e massima, tempo di percorrenza, partenza e arrivo, e i <b>bar e ristoranti</b> a meno di 300 metri dal tracciato (con la distanza). Intanto la mappa
+            inquadra il <b>sentiero intero</b> e lo evidenzia: chiudendo la scheda (X o <b>Cammina sul sentiero</b>) lo trovi lì.
+            Con il sentiero scelto, in alto a sinistra compaiono la tua <b>velocità</b> e una <b>freccia</b>
+            (il nord è in alto, come sulla mappa): se sei lontano dal sentiero la freccia punta al suo punto più vicino, che una
+            linea tratteggiata collega a te sulla mappa; quando ci sei sopra punta lungo il sentiero, nel senso in cui cammini.
+            Il riquadro e il sentiero evidenziato restano finché non tocchi <b>Esci</b> nel riquadro stesso.
+            <b>In auto al sentiero</b> apre il navigatore verso l'estremità del sentiero più vicina a te.</p>
+          <p><b>Street View agli estremi</b>: due pulsanti aprono Google Maps con la foto sferica più vicina a ciascuna estremità
+            del sentiero, da girare col dito. In montagna spesso non c'è la macchina di Google: si vede la foto sferica di un escursionista
+            o quella della strada più vicina.</p>
+          <p><b>Salva per l'uso senza rete</b>: prima di partire, con la connessione, salva sul telefono uno o più sentieri.
+            L'app tiene la traccia, i numeri, il dislivello, i dati del CAI e la <b>mappa topografica</b> intorno al percorso.
+            Senza campo li trovi in alto nella pagina <b>Elenco</b>: toccane uno e poi <b>Cammina sul sentiero</b>, la freccia e la
+            distanza funzionano con il solo GPS. Per toglierlo, nella sua scheda tocca <b>Togli dai salvati</b>.
+            Senza rete usa la mappa <b>Topografica</b>: le altre non sono salvate. Su iPhone conviene installare l'app sulla schermata Home,
+            altrimenti Safari può cancellare i dati salvati dopo qualche settimana senza usarla.</p>
+          <p><b>Scarica il percorso</b> (tocca il pulsante per aprire il riquadro): scegli il formato (GPX va bene quasi ovunque; KML per Google Earth; GeoJSON per i programmi
+            di mappe) e la direzione, poi tocca <b>Salva il file</b>: finisce nei Download dell'app File. Da lì toccalo (o tienilo premuto,
+            Condividi) e scegli l'app di navigazione, per esempio OsmAnd. In OsmAnd la traccia finisce in I miei luoghi → Tracce. Il tracciato intero viene da Waymarked Trails; se non risponde,
+            il file usa la traccia dell'app, semplificata.</p>
+          <p><b>Invia Sentiero con WhatsApp</b> manda un link: chi lo apre vede Qui-Trekking con la stessa mappa, lo stesso raggio,
+            le stesse scelte di cosa mostrare e la scheda dello stesso sentiero.</p>
+          <p>Il <b>dislivello</b> e il <b>tempo</b> sono quelli scritti su OpenStreetMap; quando mancano l'app li calcola
+            dalle quote del terreno (indicati come <i>stima</i>). Il tempo stimato è per un escursionista medio, senza soste.
+            Se il sentiero è nel Catasto sentieri del CAI si mostrano i <b>tempi CAI</b>, all'andata e al ritorno.</p>
+          <p>La <b>percorribilità</b> viene dal Catasto sentieri del CAI: nella scheda c'è un riquadro verde (percorribile),
+            arancione (percorribile in parte) o rosso (non percorribile), con la nota e la data della segnalazione.
+            Sulla mappa i sentieri non percorribili o interrotti hanno un <span class="avviso-cai cai-no" style="display:inline-grid;vertical-align:middle;width:18px;height:18px;font-size:12px">!</span>.
+            Le segnalazioni possono non essere aggiornate: prima di partire informati sul posto.</p>
+        </section>
 
         <section id="g-mappa">
           <h3>I segnaposto sulla mappa</h3>
+          <ul class="g-lista" id="g-legenda"></ul>
           <ul class="g-lista">
-            <li><span class="g-segno"><span class="mk reale verde">42</span></span><div><b>Quadrato verde con numero</b>: parcheggio con posti liberi <i>adesso</i>; il numero dice quanti.</div></li>
-            <li><span class="g-segno"><span class="mk reale pieno">0</span></span><div><b>Rosso con 0</b>: parcheggio pieno in questo momento.</div></li>
-            <li><span class="g-segno"><span class="mk t-aperto">4</span></span><div><b>Quadrato con numero</b>: parcheggio piccolo, da 1 a 6 posti in tutto.</div></li>
-            <li><span class="g-segno"><span class="mk t-multipiano largo">120</span></span><div><b>Rettangolo con numero</b>: parcheggio con più di 6 posti in tutto.</div></li>
-            <li><span class="g-segno"><span class="mk t-aperto">N</span></span><div><b>Quadrato con N</b>: parcheggio di cui non si sa quanti posti ha.</div></li>
-            <li><span class="g-segno"><span class="mk t-garage">8</span></span><div><b>Il colore dice il tipo</b> (come i pallini nel menu dei tipi):<span class="g-colori"><span><i class="pallino t-aperto"></i>blu: all'aperto</span><span><i class="pallino t-multipiano"></i>viola: multipiano e interrati</span><span><i class="pallino t-garage"></i>verde petrolio: garage e posti coperti</span><span><i class="pallino t-strada"></i>marrone: sosta su strada</span><span><i class="pallino t-disabili"></i>rosa: stalli per disabili</span><span><i class="pallino t-reale"></i>verde: posti liberi adesso</span></span></div></li>
-            <li><span class="g-segno"><span class="mk t-aperto largo">40</span></span><div><b>Numero stimato</b>: se la mappa non dice quanti posti ci sono, l'app li stima dalla superficie dell'area di sosta (circa 25 m² per auto) o dalla lunghezza della strada. Nel riquadro compare "circa", nell'elenco il segno ~. La stima può sbagliare anche di un terzo.</div></li>
-            <li><span class="g-segno"><span class="segn-box"><span class="mk segn libero"></span><span class="segn-eta">5 min</span></span></span><div><b>Pallino verde</b>: posto libero segnalato da un utente; accanto, da quanti minuti. Sparisce dopo 2 ore.</div></li>
-            <li><span class="g-segno"><span class="mk segn occupato"></span></span><div><b>Pallino rosso</b>: qualcuno ha appena parcheggiato lì.</div></li>
-            <li><span class="g-segno"><span class="g-linea"></span></span><div><b>Linea marrone lungo una strada</b>: tratto di strada dove si può sostare. Avvicinando molto la mappa compare a metà della linea un segnaposto con il numero stimato di posti.</div></li>
-            <li><span class="g-segno"><span class="g-area"></span></span><div><b>Area rossa</b>: Zona a Traffico Limitato o area pedonale. Si entra solo con il contrassegno (residenti, autorizzati, disabili…). Toccala per vedere di che zona si tratta.</div></li>
-            <li><span class="g-segno"><span class="mk t-aperto largo in-ztl">25</span></span><div><b>Etichetta rossa "ZTL"</b> sul segnaposto: il parcheggio è dentro una ZTL, raggiungibile solo con contrassegno.</div></li>
-            <li><span class="g-segno"><span class="g-area c"></span></span><div><b>Bordo arancione tratteggiato</b> (Milano): Area C. Si entra pagando il ticket; i parcheggi dentro hanno l'etichetta arancione "C".</div></li>
-            <li><span class="g-segno"><span class="mk varco"></span></span><div><b>Pallino rosso con centro bianco</b>: varco con telecamera all'ingresso della ZTL (visibile avvicinando la mappa).</div></li>
+            <li><span class="g-segno"><span class="mk tipo-R aperto"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg></span></span><div><b>Pallino verde</b>: rifugio aperto adesso (o in questa stagione), secondo gli orari su OpenStreetMap.</div></li>
+            <li><span class="g-segno"><span class="mk tipo-R chiuso"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg></span></span><div><b>Più chiaro, con pallino rosso</b>: chiuso adesso.</div></li>
             <li><span class="g-segno"><span class="io"></span></span><div><b>Punto azzurro</b>: sei tu. Il <b>cono azzurro</b> mostra dove è rivolto il telefono (su iPhone tocca il pulsante della posizione e consenti <i>Movimento e orientamento</i>). Il <b>cerchio tratteggiato</b> è il raggio di ricerca.</div></li>
           </ul>
-          <p>Tocca un segnaposto per aprire il <b>riquadro</b> con nome, posti, tariffa e distanza: l'app lo legge ad alta voce
-            (se la lettura vocale è attiva). Il pulsante <b>Portami qui</b> apre il navigatore.</p>
-          <p>Avvicinando molto la mappa compaiono anche i singoli stalli disegnati come piccoli quadratini.</p>
+          <p>Tocca un segnaposto per aprire la sua <b>scheda</b>: nome, quota, gestore, posti letto, orari, telefono, sito e distanza.
+            Nella scheda di una <b>fontanella</b> o di una <b>sorgente</b> puoi scattare una foto: resta salvata solo sul tuo telefono.</p>
         </section>
 
         <section id="g-pulsanti">
           <h3>I pulsanti</h3>
           <ul class="g-lista">
-            <li><span class="g-segno"><span class="g-barra">Cerca un indirizzo…</span></span><div><b>Cerca</b>: scrivi una via o una piazza per vedere i parcheggi lì invece che intorno a te.</div></li>
-            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.6V19l-4 2v-8.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span></span><div><b>Tipi di parcheggio</b> (imbuto in alto, accanto al raggio): apre un menu con i tipi da mostrare, tutti spuntati all'inizio: aree di sosta all'aperto, multipiano e interrati, garage e posti coperti, sosta su strada, stalli per disabili, posti liberi segnalati e in tempo reale; sotto, la tariffa: gratuiti e a pagamento. Togli la spunta a quello che non ti interessa (anche più voci insieme): un parcheggio si vede se il suo tipo e la sua tariffa sono spuntati; quelli con tariffa non indicata si vedono finché almeno una delle due tariffe è spuntata. In fondo c'è <b>Dentro le ZTL e le aree pedonali</b>: all'inizio è senza spunta, quindi i parcheggi raggiungibili solo con il contrassegno non si vedono; spuntala se ce l'hai. Il numerino arancione dice quante voci hai cambiato rispetto all'inizio; <b>Torna alle scelte iniziali</b> rimette tutto com'era.</div></li>
-            <li><span class="g-segno"><span class="g-barra corto">1 km</span></span><div><b>Raggio</b>: quanto lontano cercare, 200 m, 500 m, 1 km o 2 km.</div></li>
-            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti.</div></li>
-            <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i posti vicini e le impostazioni. Il numerino verde indica quanti posti sono sicuramente liberi.</div></li>
-            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><div><b>Aggiorna</b>: riscarica subito tutti i dati.</div></li>
+            <li><span class="g-segno"><span class="g-barra">Cerca un luogo…</span></span><div><b>Cerca</b>: scrivi un paese, una valle o un rifugio per vedere i sentieri lì invece che intorno a te.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: tre sezioni che si aprono toccandole. <b>Sentieri CAI</b>: le difficoltà e il numero sulla mappa; <b>Sentieri NON CAI</b>: sentieri e sterrate di OpenStreetMap senza segnavia, tratteggiati, che si vedono da vicino (all'inizio spenti); <b>Punti</b>. Spunta quello che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b>, le <b>sorgenti</b> (che spesso non sono potabili), i <b>bar e ristoranti</b> (solo quelli a meno di 300 metri da un sentiero) e le <b>funivie e seggiovie</b>. Sotto le difficoltà c'è <b>Numero dei sentieri sulla mappa</b>: toglilo dove i sentieri sono così fitti che i numeri coprono la mappa.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">15 km</span></span><div><b>Raggio</b>: quanto lontano cercare, da 2 a 25 km (di solito 15). Con un raggio grande in montagna i sentieri sono tanti e lo scaricamento è più lento.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti. All'avvio l'app riparte dall'ultima zona che guardavi: tocca qui per tornare dove sei.</div></li>
+            <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i sentieri e i punti vicini e le impostazioni.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><div><b>Aggiorna</b>: riscarica subito i dati da OpenStreetMap.</div></li>
+            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg></span></span><div><b>Percorso a piedi</b>: il percorso sui sentieri da A a B, con il profilo altimetrico (vedi <i>Percorso a piedi</i>).</div></li>
             <li><span class="g-segno"><span class="btn-help g-help">HELP</span></span><div><b>HELP</b> (in alto nella pagina Elenco, accanto alla X): apre questa pagina.</div></li>
-            <li><span class="g-segno"><span class="g-fab verde"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v7M8.5 10h7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></span><div><b>Posto libero qui</b>: segnala agli altri che dove sei c'è un posto libero.</div></li>
-            <li><span class="g-segno"><span class="g-fab rosso"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span></span><div><b>Ho parcheggiato</b>: segnala che hai appena occupato il posto dove sei e salva lì <b>la tua auto</b>.</div></li>
-            <li><span class="g-segno"><span class="mk-auto"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span></span><div><b>La tua auto</b> (segnaposto nero): dove hai lasciato l'auto. Se l'app è aperta mentre guidi, quando ti fermi per un paio di minuti salva il posto da sola e in basso compare <b>"Parcheggio salvato · Annulla"</b>. Se avevi chiuso l'app in macchina, alla riapertura a piedi lì vicino prova a capire dove hai lasciato l'auto. Se il punto non è giusto, trascina il segnaposto nel posto vero, oppure toccalo e scegli <b>Sposta dove sono</b>; <b>Portami all'auto</b> apre il navigatore a piedi. Quando riparti e superi i 50 km/h, l'auto sparisce dalla mappa e il posto dove era viene <b>segnalato libero</b> agli altri (non dopo una sosta di pochi minuti); se non eri tu a ripartire, tocca <b>Annulla</b>. Il salvataggio da solo si spegne nella pagina Elenco (SALVA DOVE PARCHEGGIO).</div></li>
-            <li><span class="g-segno"><span class="mk-auto"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></svg></span></span><div><b>Salvaschermo</b> (pulsante con la luna): schermo nero con scritte grandi, lo schermo resta acceso. Con l'auto salvata mostra una <b>freccia verso l'auto</b>, la distanza e i minuti a piedi; quando arrivi scrive "Sei arrivato". Mentre guidi mostra la velocità e i posti liberi segnalati entro 1 km. Si apre anche <b>da solo dopo 1 minuto senza toccare lo schermo</b>, se stai guidando o stai andando a piedi verso l'auto (si cambia nella pagina Elenco, SALVASCHERMO). Il salvataggio del parcheggio e la segnalazione del posto lasciato libero continuano a funzionare. Tocca lo schermo per tornare alla mappa. L'app deve restare aperta: se blocchi il telefono o passi a un'altra app, il GPS si ferma. Su iPhone, la prima volta consenti l'accesso a "Movimento e orientamento" per la freccia.</div></li>
+            <li><span class="g-segno"><span class="g-fab rifugio"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg></span></span><div><b>Rifugio</b>: porta la mappa sul rifugio più vicino aperto; se nessuno risulta aperto, sul più vicino.</div></li>
+            <li><span class="g-segno"><span class="g-fab acqua"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/></svg></span></span><div><b>Fontanella</b>: porta la mappa sulla fontanella di acqua potabile più vicina.</div></li>
           </ul>
           <p>Per ingrandire o rimpicciolire la mappa usa due dita.</p>
         </section>
 
+        <section id="g-percorso">
+          <h3>Percorso a piedi da A a B</h3>
+          <p>Tocca il pulsante <b>Percorso</b> (a destra, sotto Aggiorna) e scrivi da dove parti e dove vuoi arrivare: un paese, un rifugio,
+            una cima, un indirizzo, oppure le coordinate. Se lasci vuota la partenza si parte dalla tua posizione. Con il pulsante
+            <b>segnaposto</b> accanto a ogni casella scegli il punto toccando la mappa. Nella scheda di un rifugio, bivacco o altro punto,
+            <b>A piedi fin qui</b> lo mette come arrivo.</p>
+          <ul class="g-lista">
+            <li><b>Sui sentieri scelti</b>: con i <b>sentieri NON CAI</b> spenti in <i>Cosa mostrare</i>, il percorso sta il più possibile sui <b>sentieri CAI</b> (quelli colorati sulla mappa), anche se così è più lungo; usa sentieri senza segnavia o strade solo dove non c'è altro modo. Con i NON CAI accesi, sentieri segnati e non segnati valgono uguale. Le difficoltà scelte non contano per il percorso. <b>Il più corto</b> sceglie la strada più breve, di qualunque tipo.</li>
+            <li>Sulla mappa il percorso è una linea <b style="color:#d61f8c">fucsia</b> con <b>A</b> (partenza) e <b>B</b> (arrivo).</li>
+            <li>In basso un riquadro dice lunghezza, salita, discesa, tempo stimato e quota minima e massima; sotto c'è il <b>profilo altimetrico</b>:
+              tocca o trascina il dito sul profilo e un pallino ti mostra quel punto sulla mappa, con distanza dalla partenza e quota.</li>
+            <li>Sotto il profilo ci sono i <b>sentieri usati</b>, nell'ordine, con il segnavia e i chilometri: toccane uno per aprire la sua scheda. Un riquadro giallo <b>⚠</b> avvisa quanti chilometri sono su <b>sentieri NON CAI</b>, senza segnavia: possono essere poco tracciati o chiusi.
+              <b>Salva GPX</b> salva il percorso come file per un'altra app di navigazione.</li>
+            <li>La freccia in alto a sinistra ti guida lungo il percorso, come su un sentiero. La barra in alto riassume il percorso: toccala per cambiarlo;
+              la <b>X</b> (o <b>Esci</b> nel riquadro della freccia) chiude il percorso.</li>
+          </ul>
+          <p>Il percorso è calcolato da <b>BRouter</b>, un servizio gratuito che usa le mappe di OpenStreetMap; le quote sono quelle del modello del terreno.
+            Il tempo è una stima per un escursionista medio, senza soste. Il percorso può passare su sentieri difficili o chiusi:
+            prima di partire guarda la difficoltà dei sentieri sulla mappa e informati sul posto.</p>
+        </section>
+
         <section id="g-elenco">
           <h3>La pagina Elenco e le impostazioni</h3>
-          <p>In alto una riga dice cosa sta facendo l'app (ricerca in corso, ora dell'ultimo aggiornamento, eventuali problemi).</p>
+          <p>In alto una riga dice cosa sta facendo l'app e quando sono stati scaricati i dati.</p>
           <dl class="g-def">
             <dt>AUTO-REFRESH</dt>
-            <dd>Ogni 30, 60 o 120 secondi l'app torna sulla tua posizione e aggiorna i dati da sola. <b>0</b> la spegne. Parte da 120.
-              Si ferma quando l'app è in secondo piano o lo schermo è spento.
-              Finché è attivo, il telefono non va in standby e lo schermo resta acceso
-              (al centro della riga compare l'<b>occhio verde</b>):
-              in macchina tieni il telefono in carica, a piedi mettilo a 0 per risparmiare batteria.</dd>
+            <dd>Ogni 30, 60 o 120 secondi l'app torna sulla tua posizione e ricalcola sentieri e punti vicini. <b>0</b> la spegne: a ogni avvio è spenta, così l'app riparte dall'<b>ultima posizione</b> guardata; tocca il pulsante della posizione per tornare su di te.
+              Finché è attivo, il telefono non va in standby e lo schermo resta acceso (al centro della riga compare l'<b>occhio verde</b>).</dd>
             <dt>SUONI</dt>
-            <dd>Un <b>bing</b> a ogni aggiornamento; <b>due note che scendono</b> se i dati non si possono scaricare;
-              <b>tre note che salgono</b> quando compare un nuovo posto libero segnalato da un altro utente.</dd>
+            <dd>Un <b>bing</b> a ogni aggiornamento; <b>due note che scendono</b> se i dati non si possono scaricare.</dd>
             <dt>MAPPA</dt>
-            <dd><b>Stradale</b> mostra la cartina di OpenStreetMap; <b>Stradale, nomi grandi</b> la stessa cartina con i nomi delle vie scritti il doppio più grandi (un po' meno nitida); <b>Satellite</b> mostra le foto aeree con sopra i nomi di strade e paesi,
-              utile per riconoscere i parcheggi dall'alto.</dd>
+            <dd><b>Topografica</b> mostra curve di livello, cime e sentieri (OpenTopoMap); <b>Stradale</b> la cartina di OpenStreetMap, anche con i <b>nomi grandi</b>; <b>Satellite</b> le foto aeree.</dd>
             <dt>LETTURA VOCALE</dt>
-            <dd>Quando tocchi un segnaposto, l'app legge ad alta voce il riquadro.</dd>
+            <dd>Quando tocchi un sentiero o un segnaposto, l'app legge ad alta voce nome, difficoltà, lunghezza e distanza. A ogni avvio è spenta.</dd>
           </dl>
-          <p>Sotto trovi tre numeri riassuntivi (posti liberi nei parcheggi, posti segnalati liberi, aree di sosta in zona),
-            e l'<b>elenco</b>: prima i posti sicuramente liberi, poi gli altri dal più vicino. I tipi scelti sulla mappa valgono anche qui.
-            Tocca una riga per vederla sulla mappa.</p>
-          <p>Le scelte restano memorizzate sul telefono.</p>
+          <p>Sotto trovi quanti sentieri ci sono nel raggio, quanti rifugi e bivacchi e quanto dista la fontanella più vicina,
+            poi l'<b>elenco</b> ordinato <b>per distanza</b>, <b>per nome</b> o <b>per lunghezza</b>. <b>Solo sentieri CAI</b> nasconde
+            i sentieri non gestiti dal CAI; <b>Rifugi aperti ora</b> nasconde i punti che non risultano aperti. Tocca una riga per vederla sulla mappa.</p>
+          <p>Le altre scelte restano memorizzate sul telefono.</p>
         </section>
 
-        <section id="g-segnalazioni">
-          <h3>Le segnalazioni</h3>
+        <section id="g-dati">
+          <h3>Da dove vengono i dati</h3>
           <ul class="g-punti">
-            <li>Le vedono tutti quelli che usano l'app, e restano sulla mappa per <b>2 ore</b>, sempre più trasparenti.</li>
-            <li>Per segnalare serve il <b>GPS preciso</b> (entro 60 metri): all'aperto funziona meglio.</li>
-            <li>Si può fare una segnalazione ogni 30 secondi.</li>
-            <li>Più persone usano l'app, più le segnalazioni sono utili: condividi l'indirizzo con amici e familiari.</li>
+            <li>Sentieri, rifugi e fontanelle vengono da <b>OpenStreetMap</b>. In <b>Lombardia</b>, <b>Valle d'Aosta</b> e <b>Sardegna</b> (e 15 km oltre i confini)
+              ogni lunedì il sito li scarica e li tiene pronti: lì l'app è veloce e non dipende dai server di OpenStreetMap.
+              Fuori da queste regioni l'app li chiede ogni volta a OpenStreetMap, e può volerci più di un minuto.</li>
+            <li>Percorribilità, tempi e dislivelli dei sentieri accatastati vengono dal <b>Catasto sentieri CAI</b>
+              (<a href="https://osm2cai.cai.it" target="_blank" rel="noopener">OSM2CAI</a>), anche questi aggiornati ogni lunedì, per le stesse tre regioni.</li>
+            <li>In <b>Sardegna</b>, dove su OpenStreetMap i sentieri sono pochi, si aggiungono quelli della Rete Escursionistica regionale
+              che OpenStreetMap non ha ancora, dal catalogo <a href="https://www.sardegnasentieri.it" target="_blank" rel="noopener">Sardegna Sentieri</a>
+              dell'Agenzia Forestas (licenza CC BY-NC-SA), con il loro stato («Percorribile», «In revisione»…) e i loro tempi.</li>
+            <li>Gli ultimi dati scaricati restano sul telefono: se in montagna non c'è campo, l'app usa quelli.</li>
+            <li>La <b>difficoltà</b> è quella indicata dal CAI (tag <i>cai_scale</i>); se manca si usa la scala svizzera convertita. Se non c'è nessuna delle due il sentiero è grigio.</li>
+            <li>Il <b>segnavia</b> è quello descritto su OpenStreetMap (tag <i>osmc:symbol</i>); per i sentieri CAI senza descrizione si mostra il classico bianco e rosso.</li>
+            <li>Le <b>quote</b> per il dislivello stimato vengono dal modello del terreno Copernicus (precisione di circa 30 metri, tramite Open-Meteo): il risultato è indicativo.</li>
+            <li>Gli <b>orari dei rifugi</b> sono quelli inseriti dai volontari e spesso mancano: telefona prima, soprattutto per dormire.</li>
+            <li>Se trovi un errore puoi correggerlo tu su openstreetmap.org.</li>
           </ul>
         </section>
-
 
         <section id="g-consigli">
           <h3>Consigli</h3>
           <ul class="g-punti">
-            <li><b>Non usare il telefono mentre guidi.</b> Mettilo su un supporto, usa auto-refresh, suoni e lettura vocale, o fai usare l'app a chi è con te.</li>
+            <li>In <b>emergenza</b> chiama il <b>112</b>. Se puoi, installa anche l'app <b>GeoResQ</b> del CAI e del Soccorso alpino.</li>
+            <li>Scegli sentieri adatti alla tua preparazione e controlla il <b>meteo</b> prima di partire.</li>
+            <li>Non bere l'acqua delle <b>sorgenti</b> se non è indicata come potabile.</li>
             <li>Metti l'icona sulla schermata Home: nella pagina Elenco tocca <b>Installa l'app</b> e segui i passaggi (su iPhone: in Safari <b>Condividi → Aggiungi alla schermata Home</b>).</li>
+            <li>Apri l'app <b>prima di partire</b>, quando hai ancora campo, e tocca <b>Salva per l'uso senza rete</b> nella scheda dei sentieri che vuoi fare.</li>
             <li>Al primo avvio consenti l'accesso alla <b>posizione</b>. Tocca la mappa una volta per abilitare suoni e voce.</li>
-            <li>Con l'interruttore del <b>silenzioso</b> attivo i suoni non si sentono.</li>
             <li>Ti è utile? In alto nella pagina Elenco tocca il pulsante verde <b>Condividi</b>: si apre WhatsApp con un messaggio già scritto e il link all'app.</li>
             <li>Il numero di <b>versione</b>, nell'ultima riga della pagina Elenco, ti dice se hai l'ultimo aggiornamento.</li>
           </ul>
@@ -293,10 +437,10 @@
 
   <section class="installa" id="installa" role="dialog" aria-modal="false" aria-labelledby="installa-titolo" hidden>
     <div class="installa-testa">
-      <img src="icon-192.png" alt="" width="52" height="52">
+      <img src="icon-192.png?v=8" alt="" width="52" height="52">
       <div>
-        <h2 id="installa-titolo">Metti Qui-Parking sul telefono</h2>
-        <p>Con l'icona sulla schermata Home la apri con un tocco, come un'app, a tutto schermo.</p>
+        <h2 id="installa-titolo">Metti Qui-Trekking sul telefono</h2>
+        <p>Con l'icona sulla schermata Home la apri con un tocco, come un'app, a tutto schermo e anche senza campo.</p>
       </div>
     </div>
     <div class="installa-corpo" id="installa-corpo"></div>
@@ -307,41 +451,19 @@
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <div class="salvaschermo" id="salvaschermo" hidden>
-    <div class="ss-contenuto" id="ss-contenuto">
-      <div class="ss-ora" id="ss-ora"></div>
-      <div class="ss-centro">
-        <div class="ss-segno">
-          <div class="ss-freccia" id="ss-freccia" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6 L84 88 L50 70 L16 88 Z" fill="currentColor"/></svg></div>
-          <div class="ss-icona" id="ss-icona"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
-        </div>
-        <div class="ss-grande" id="ss-grande"></div>
-        <div class="ss-sotto" id="ss-sotto"></div>
-      </div>
-      <div class="ss-stato" id="ss-stato"></div>
-      <div class="ss-esci">Tocca per tornare alla mappa</div>
-    </div>
-  </div>
-
-  <div class="avviso-auto" id="avviso-auto" role="status" aria-live="polite" hidden>
-    <span class="avviso-auto-icona" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 16.5V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 12.2h16v4.3H4z" fill="currentColor"/><path d="M6.5 16.5v2M17.5 16.5v2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
-    <span id="avviso-auto-testo">Parcheggio salvato</span>
-    <button type="button" id="avviso-auto-annulla">Annulla</button>
-  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=39"></script>
-  <script src="core.js?v=35"></script>
-  <script src="segnalazioni.js?v=34"></script>
-  <script src="app.js?v=39"></script>
-  <script src="installa.js?v=35"></script>
-  <script src="bussola.js?v=39"></script>
-  <!-- Statistiche d'uso anonime, senza cookie: https://parcheggi.goatcounter.com
+  <script src="config.js?v=37"></script>
+  <script src="core.js?v=25"></script>
+  <script src="app.js?v=36"></script>
+  <script src="installa.js?v=20"></script>
+
+  <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com
        I dispositivi del team (segnati una volta aprendo l'app con ?gc_team=nome-dispositivo,
        tolti con ?gc_team=off) contano a parte su https://quivicino-team.goatcounter.com -->
   <script>
     (function () {
-      var endpoint = "https://parcheggi.goatcounter.com/count";
+      var endpoint = "https://trekking.goatcounter.com/count";
       try {
         var q = new URLSearchParams(location.search).get("gc_team");
         if (q === "off") { localStorage.removeItem("gc_team"); alert("Questo dispositivo ora conta come un visitatore normale."); }
