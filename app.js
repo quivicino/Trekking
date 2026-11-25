@@ -1698,11 +1698,14 @@
   function tempoPercorso(p) { return QT.tempoStimato(p.metri, p.su || 0, p.giu || 0); }
   function aggiornaModoPercorso() {
     const p = percorsoAttivo();
-    $("percorso-barra").hidden = !p;
+    // il nome del percorso è il titolo del riquadro; la barra in alto compare solo con il riquadro chiuso
+    $("percorso-barra").hidden = !p || !infoChiusa;
     $("percorso-info").hidden = !p || infoChiusa;
+    document.querySelector(".fab-azioni").classList.toggle("compatte", !!p && !infoChiusa);
     $("btn-percorso").setAttribute("aria-pressed", String(!!p));
     if (p) {
       $("percorso-testo").textContent = `${p.daGps ? "Da qui" : p.da} → ${p.a} · ${QT.formattaKm(p.metri)}`;
+      $("pi-titolo").innerHTML = `<span>${esc(p.daGps ? "Da qui" : p.da)} → ${esc(p.a)}</span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
       const num = [`<span>${QT.formattaKm(p.metri)}</span>`];
       if (p.su != null) num.push(`<span>↗ ${p.su} m</span>`);
       if (p.giu != null) num.push(`<span>↘ ${p.giu} m</span>`);
@@ -1734,16 +1737,17 @@
   function posizionaAzioni() {
     const box = $("percorso-info"), az = document.querySelector(".fab-azioni");
     if (!az) return;
-    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 26) + "px";
+    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 40) + "px";
   }
   window.addEventListener("resize", posizionaAzioni);
   // Croce del riquadro: lo chiude, il percorso resta sulla mappa; si riapre toccando la barra in alto
   let infoChiusa = false;
   $("btn-pi-chiudi").addEventListener("click", () => {
     infoChiusa = true;
-    $("percorso-info").hidden = true;
+    aggiornaModoPercorso();
     posizionaAzioni();
   });
+  $("pi-titolo").addEventListener("click", () => { inquadraPercorso(); apriPercorso(); });
 
   // ---------- Profilo altimetrico del percorso ----------
   // Tocca o trascina il dito sul profilo: un pallino mostra quel punto sulla mappa, con distanza e quota.
