@@ -1758,7 +1758,10 @@
   function posizionaAzioni() {
     const box = $("percorso-info"), az = document.querySelector(".fab-azioni");
     if (!az) return;
-    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 40) + "px";
+    // misurato sullo schermo: sull'iPhone il riquadro sta più in alto per la barra di sistema in basso (safe area)
+    if (box.hidden) { az.style.bottom = ""; return; }
+    const sotto = az.offsetParent.getBoundingClientRect().bottom - box.getBoundingClientRect().top;
+    az.style.bottom = Math.round(sotto + 10) + "px";
   }
   window.addEventListener("resize", posizionaAzioni);
   // il riquadro cambia altezza anche dopo (caratteri che arrivano dopo, avviso che va a capo): i pulsanti lo seguono
