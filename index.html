@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=36">
 </head>
 <body>
   <div class="app">
@@ -26,10 +26,8 @@
         <img class="logo" src="icon-192.png?v=8" alt="" width="50" height="50">
         <span class="brand-name">Qui-Trekking</span>
       </div>
-      <form class="cerca" id="form-cerca" role="search">
-        <label for="cerca-indirizzo" class="sr-only">Cerca un luogo</label>
-        <input id="cerca-indirizzo" type="search" placeholder="Cerca…" autocomplete="off" enterkeyhint="search">
-      </form>
+      <button class="barra-btn" id="btn-vai" type="button" aria-controls="form-cerca" aria-expanded="false">Vai a</button>
+      <button class="barra-btn" id="btn-percorso" type="button" title="Percorso a piedi da A a B" aria-controls="percorso" aria-expanded="false" aria-pressed="false">Percorso</button>
       <div class="carb" id="cat-box">
         <button class="cat-btn" id="categoria" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="cat-menu">
           <span class="sr-only">Cosa mostrare: </span><span id="categoria-testo">Cosa mostrare</span>
@@ -91,9 +89,6 @@
         <button class="fab" id="btn-aggiorna" type="button" title="Aggiorna" aria-label="Aggiorna i dati">
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="fab" id="btn-percorso" type="button" title="Percorso a piedi da A a B" aria-label="Percorso a piedi da A a B" aria-controls="percorso" aria-expanded="false" aria-pressed="false">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg>
-        </button>
       </div>
 
       <div class="percorso-barra" id="percorso-barra" hidden>
@@ -102,6 +97,19 @@
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         </button>
       </div>
+
+      <form class="percorso vai" id="form-cerca" role="search" aria-labelledby="vai-titolo" hidden>
+        <div class="percorso-testa">
+          <h2 id="vai-titolo">Vai a</h2>
+          <button class="chiudi" id="btn-chiudi-vai" type="button" aria-label="Chiudi">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <label class="campo"><span class="sr-only">Cerca un luogo</span>
+          <input id="cerca-indirizzo" type="search" placeholder="Paese, rifugio, cima…" autocomplete="off" enterkeyhint="search"></label>
+        <button class="btn-perc-vai" type="submit">Cerca</button>
+        <p class="perc-nota">Mostra sentieri e punti intorno al luogo cercato. Il pulsante della posizione ti riporta dove sei.</p>
+      </form>
 
       <form class="percorso" id="percorso" aria-labelledby="percorso-titolo" hidden>
         <div class="percorso-testa">
@@ -155,18 +163,14 @@
       </div>
 
       <div class="fab-azioni">
-        <button class="fab fab-rifugio" id="btn-rifugio" type="button" title="Il rifugio più vicino" aria-label="Mostra il rifugio più vicino, aperto se possibile">
-          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg>
-        </button>
-        <button class="fab fab-acqua" id="btn-acqua" type="button" title="La fontanella più vicina" aria-label="Mostra la fontanella più vicina">
-          <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/></svg>
-        </button>
+        <button class="pill-azione rifugio" id="btn-rifugio" type="button" title="Il rifugio più vicino" aria-label="Mostra la baita più vicina: il rifugio, aperto se possibile">Baita più vicina</button>
+        <button class="pill-azione acqua" id="btn-acqua" type="button" title="La fontanella più vicina" aria-label="Mostra la fontanella più vicina">Fontanella più vicina</button>
       </div>
     </main>
 
     <section class="pannello" id="pannello" aria-label="Sentieri e punti vicini" hidden>
       <header class="pannello-testa">
-        <h2>Qui-Trekking</h2>
+        <h2 class="titolo-logo"><img class="logo-chiaro-sfondo" src="logo-qui-trekking-scuro.png" alt="Qui Trekking" width="202" height="30"><img class="logo-scuro-sfondo" src="logo-qui-trekking-chiaro.png" alt="" width="202" height="30"></h2>
         <a class="condividi" id="btn-condividi" href="https://wa.me/" target="_blank" rel="noopener" aria-label="Condividi l'app con un amico su WhatsApp">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.6 8.4c.2-.5.5-.5.8-.5h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.2.3 0 .5.6 1 1.4 1.8 2.4 2.4.2.1.4.1.5 0l.6-.7c.2-.2.4-.2.6-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3-.1.7-.6.9-.5.3-1.4.5-2.6.1a9 9 0 0 1-4.6-4.3c-.6-1.2-.4-2.2-.2-2.7Z" fill="currentColor"/></svg>
           <span class="condividi-testo">Condividi</span>
@@ -192,6 +196,9 @@
           <ol class="lista" id="lista-salvati"></ol>
         </section>
 
+        <details class="impostazioni" id="impostazioni">
+          <summary>IMPOSTAZIONI <small id="imp-riassunto"></small></summary>
+          <div class="impostazioni-righe">
         <label class="auto" for="auto-refresh">
           <span>AUTO-REFRESH</span>
           <span class="occhio" id="occhio" hidden title="Schermo sempre acceso"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg></span>
@@ -228,6 +235,8 @@
             <option value="0" selected>Spenta</option>
           </select>
         </label>
+          </div>
+        </details>
 
         <div class="sommario" id="sommario">
           <div class="kpi kpi-osm"><b id="k-n">–</b><span>sentieri<br>nel raggio</span></div>
@@ -302,7 +311,7 @@
             Con il sentiero scelto, in alto a sinistra compaiono la tua <b>velocità</b> e una <b>freccia</b>
             (il nord è in alto, come sulla mappa): se sei lontano dal sentiero la freccia punta al suo punto più vicino, che una
             linea tratteggiata collega a te sulla mappa; quando ci sei sopra punta lungo il sentiero, nel senso in cui cammini.
-            Il riquadro e il sentiero evidenziato restano finché non tocchi <b>Esci</b> nel riquadro stesso.
+            Il riquadro e il sentiero evidenziato restano finché non tocchi la <b>X</b> nel riquadro stesso.
             <b>In auto al sentiero</b> apre il navigatore verso l'estremità del sentiero più vicina a te.</p>
           <p><b>Street View agli estremi</b>: due pulsanti aprono Google Maps con la foto sferica più vicina a ciascuna estremità
             del sentiero, da girare col dito. In montagna spesso non c'è la macchina di Google: si vede la foto sferica di un escursionista
@@ -343,23 +352,23 @@
         <section id="g-pulsanti">
           <h3>I pulsanti</h3>
           <ul class="g-lista">
-            <li><span class="g-segno"><span class="g-barra">Cerca un luogo…</span></span><div><b>Cerca</b>: scrivi un paese, una valle o un rifugio per vedere i sentieri lì invece che intorno a te.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">Vai a</span></span><div><b>Vai a</b>: apre la ricerca; scrivi un paese, una valle o un rifugio e tocca <b>Cerca</b> per vedere i sentieri lì invece che intorno a te. Se il luogo si trova, la finestra si chiude da sola; la <b>X</b> la chiude senza cercare.</div></li>
+            <li><span class="g-segno"><span class="g-barra corto">Percorso</span></span><div><b>Percorso</b>: il percorso a piedi sui sentieri da A a B, con il profilo altimetrico (vedi <i>Percorso a piedi</i>).</div></li>
             <li><span class="g-segno"><span class="g-barra corto">6 tipi</span></span><div><b>Cosa mostrare</b>: tre sezioni che si aprono toccandole. <b>Sentieri CAI</b>: le difficoltà e il numero sulla mappa; <b>Sentieri NON CAI</b>: sentieri e sterrate di OpenStreetMap senza segnavia, tratteggiati, che si vedono da vicino (all'inizio spenti); <b>Punti</b>. Spunta quello che vuoi vedere, anche più di uno insieme. All'inizio sono scelti tutti tranne le <b>fontanelle</b>, le <b>sorgenti</b> (che spesso non sono potabili), i <b>bar e ristoranti</b> (solo quelli a meno di 300 metri da un sentiero) e le <b>funivie e seggiovie</b>. Sotto le difficoltà c'è <b>Numero dei sentieri sulla mappa</b>: toglilo dove i sentieri sono così fitti che i numeri coprono la mappa.</div></li>
             <li><span class="g-segno"><span class="g-barra corto">15 km</span></span><div><b>Raggio</b>: quanto lontano cercare, da 2 a 25 km (di solito 15). Con un raggio grande in montagna i sentieri sono tanti e lo scaricamento è più lento.</div></li>
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span></span><div><b>Posizione</b>: riporta la mappa su di te e la fa seguire mentre ti sposti. All'avvio l'app riparte dall'ultima zona che guardavi: tocca qui per tornare dove sei.</div></li>
             <li><span class="g-segno"><span class="g-fab nero"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.6" fill="currentColor"/><circle cx="4.5" cy="12" r="1.6" fill="currentColor"/><circle cx="4.5" cy="18" r="1.6" fill="currentColor"/></svg></span></span><div><b>Elenco</b>: apre la pagina con tutti i sentieri e i punti vicini e le impostazioni.</div></li>
             <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><div><b>Aggiorna</b>: riscarica subito i dati da OpenStreetMap.</div></li>
-            <li><span class="g-segno"><span class="g-fab"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="2.4" fill="currentColor"/><path d="M18 3.2a3.3 3.3 0 0 0-3.3 3.3c0 2.4 3.3 5.6 3.3 5.6s3.3-3.2 3.3-5.6A3.3 3.3 0 0 0 18 3.2Z" fill="currentColor"/><path d="M8.4 19h7.1a3 3 0 0 0 0-6H8.5a3 3 0 0 1 0-6H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 3.6"/></svg></span></span><div><b>Percorso a piedi</b>: il percorso sui sentieri da A a B, con il profilo altimetrico (vedi <i>Percorso a piedi</i>).</div></li>
             <li><span class="g-segno"><span class="btn-help g-help">HELP</span></span><div><b>HELP</b> (in alto nella pagina Elenco, accanto alla X): apre questa pagina.</div></li>
-            <li><span class="g-segno"><span class="g-fab rifugio"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2.5 12.5 12 4l9.5 8.5-1.5 1.6L12 7 4 14.1Z" fill="currentColor"/><path d="M5.5 13.5 12 8l6.5 5.5V21h-4.5v-5h-4v5H5.5Z" fill="currentColor"/></svg></span></span><div><b>Rifugio</b>: porta la mappa sul rifugio più vicino aperto; se nessuno risulta aperto, sul più vicino.</div></li>
-            <li><span class="g-segno"><span class="g-fab acqua"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2.5C9 7 5.8 10.6 5.8 14.6a6.2 6.2 0 0 0 12.4 0C18.2 10.6 15 7 12 2.5Z" fill="currentColor"/></svg></span></span><div><b>Fontanella</b>: porta la mappa sulla fontanella di acqua potabile più vicina.</div></li>
+            <li><span class="g-segno"><span class="g-pill rifugio">Baita più vicina</span></span><div><b>Baita più vicina</b> (in basso a sinistra): porta la mappa sul rifugio più vicino aperto; se nessuno risulta aperto, sul più vicino; se non ci sono rifugi, sul bivacco più vicino.</div></li>
+            <li><span class="g-segno"><span class="g-pill acqua">Fontanella più vicina</span></span><div><b>Fontanella più vicina</b>: porta la mappa sulla fontanella di acqua potabile più vicina.</div></li>
           </ul>
           <p>Per ingrandire o rimpicciolire la mappa usa due dita.</p>
         </section>
 
         <section id="g-percorso">
           <h3>Percorso a piedi da A a B</h3>
-          <p>Tocca il pulsante <b>Percorso</b> (a destra, sotto Aggiorna) e scrivi da dove parti e dove vuoi arrivare: un paese, un rifugio,
+          <p>Tocca <b>Percorso</b> nella barra in alto e scrivi da dove parti e dove vuoi arrivare: un paese, un rifugio,
             una cima, un indirizzo, oppure le coordinate. Se lasci vuota la partenza si parte dalla tua posizione. Con il pulsante
             <b>segnaposto</b> accanto a ogni casella scegli il punto toccando la mappa. Nella scheda di un rifugio, bivacco o altro punto,
             <b>A piedi fin qui</b> lo mette come arrivo.</p>
@@ -371,7 +380,7 @@
             <li>Sotto il profilo ci sono i <b>sentieri usati</b>, nell'ordine, con il segnavia e i chilometri: toccane uno per aprire la sua scheda. Un riquadro giallo <b>⚠</b> avvisa quanti chilometri sono su <b>sentieri NON CAI</b>, senza segnavia: possono essere poco tracciati o chiusi.
               <b>Salva GPX</b> salva il percorso come file per un'altra app di navigazione.</li>
             <li>La freccia in alto a sinistra ti guida lungo il percorso, come su un sentiero. La barra in alto riassume il percorso: toccala per cambiarlo;
-              la <b>X</b> (o <b>Esci</b> nel riquadro della freccia) chiude il percorso.</li>
+              la <b>X</b> della barra, o quella nel riquadro della freccia, chiude il percorso. La <b>X</b> del riquadro in basso lo nasconde e lascia il percorso sulla mappa: tocca la barra in alto per riaprirlo.</li>
           </ul>
           <p>Il percorso è calcolato da <b>BRouter</b>, un servizio gratuito che usa le mappe di OpenStreetMap; le quote sono quelle del modello del terreno.
             Il tempo è una stima per un escursionista medio, senza soste. Il percorso può passare su sentieri difficili o chiusi:
@@ -380,7 +389,7 @@
 
         <section id="g-elenco">
           <h3>La pagina Elenco e le impostazioni</h3>
-          <p>In alto una riga dice cosa sta facendo l'app e quando sono stati scaricati i dati.</p>
+          <p>In alto una riga dice cosa sta facendo l'app e quando sono stati scaricati i dati. Le quattro impostazioni qui sotto stanno nel pulsante <b>IMPOSTAZIONI</b>: all'apertura è chiuso e mostra un riassunto delle scelte (per esempio «refresh spento · Topografica»); toccalo per aprirle o richiuderle.</p>
           <dl class="g-def">
             <dt>AUTO-REFRESH</dt>
             <dd>Ogni 30, 60 o 120 secondi l'app torna sulla tua posizione e ricalcola sentieri e punti vicini. <b>0</b> la spegne: a ogni avvio è spenta, così l'app riparte dall'<b>ultima posizione</b> guardata; tocca il pulsante della posizione per tornare su di te.
@@ -453,9 +462,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=38"></script>
+  <script src="config.js?v=39"></script>
   <script src="core.js?v=25"></script>
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
   <script src="installa.js?v=20"></script>
 
   <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com

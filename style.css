@@ -852,3 +852,75 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: absolute; top: 8px; right: 8px; grid-area: auto; width: 38px; height: 38px; min-height: 0; padding: 0; margin: 0;
   display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--testo-2);
 }
+
+/* ---- v39: colori e logo Qui Trekking (nero → verde #0df229), barra come Qui Parking ---- */
+/* barra in alto sfumata nero → blu → verde, campi e pulsanti blu pieno */
+.topbar { background: linear-gradient(90deg, #000000 0%, #00185a 11%, #003bd7 28%, #1352ed 37%, #0b8fa0 62%, #0bd25a 87%, #0df229 100%); }
+.raggio select, .cat-btn { background: #3433f3; }
+.barra-btn {
+  flex: 1 1 auto; min-width: 0; height: 38px; border: 0; border-radius: 10px; padding: 0 10px;
+  background: #3433f3; color: #fff; font: 700 15px/1 var(--font-body);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.barra-btn[aria-expanded="true"], .barra-btn[aria-pressed="true"] { background: #fff; color: #3433f3; }
+/* Vai a e Percorso si dividono lo spazio; Cosa mostrare si accorcia per primo */
+#btn-vai, #btn-percorso { flex: 1 0 auto; }
+.carb { max-width: none; flex: 0 1 auto; min-width: 64px; }
+.raggio { flex: none; }
+@media (max-width: 480px) {
+  .barra-btn { padding: 0 8px; font-size: 14px; }
+  .topbar { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .raggio select, .cat-btn { padding: 0 3px 0 6px; font-size: 14px; }
+  .cat-btn { gap: 2px; }
+  .logo { width: 42px; height: 42px; margin: -2px 0; }
+}
+.vai .campo input { height: 46px; }
+/* Elenco: logo orizzontale al posto del titolo */
+.titolo-logo { margin: 0; line-height: 0; }
+.titolo-logo img { height: 28px; width: auto; }
+.titolo-logo .logo-scuro-sfondo { display: none; }
+@media (prefers-color-scheme: dark) {
+  .titolo-logo .logo-chiaro-sfondo { display: none; }
+  .titolo-logo .logo-scuro-sfondo { display: inline; }
+}
+.pannello-testa:has(.titolo-logo) { flex-wrap: wrap; row-gap: 10px; }
+.pannello-testa .titolo-logo { flex: 1 0 100%; }
+/* Pulsanti oblunghi in basso a sinistra */
+.fab-azioni { align-items: flex-start; }
+.pill-azione {
+  height: 52px; padding: 0 22px; border: 0; border-radius: 999px; color: #fff;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.9), var(--ombra);
+  font: 700 18px/1 var(--font-display); letter-spacing: .03em; white-space: nowrap;
+}
+.pill-azione.rifugio { background: #d32f2f; }
+.pill-azione.acqua { background: #3433f3; }
+.pill-azione:disabled { opacity: .5; cursor: default; }
+.g-pill { display: inline-grid; place-items: center; height: 26px; padding: 0 10px; border-radius: 999px; color: #fff; font: 700 12px var(--font-display); white-space: nowrap; }
+.g-pill.rifugio { background: #d32f2f; }
+.g-pill.acqua { background: #3433f3; }
+/* Impostazioni dell'Elenco in un pulsante che si apre e si richiude (chiuso all'avvio) */
+.impostazioni { border-radius: 12px; background: var(--bg); }
+.impostazioni > summary {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px;
+  border-radius: 12px; cursor: pointer; list-style: none;
+  font: 700 15px/1 var(--font-display); letter-spacing: .06em; color: var(--blu);
+}
+.impostazioni > summary::-webkit-details-marker { display: none; }
+.impostazioni > summary::after {
+  content: ""; margin-left: auto; width: 10px; height: 10px; flex: none;
+  border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor;
+  transform: translateY(-3px) rotate(45deg); transition: transform .2s;
+}
+.impostazioni[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.impostazioni > summary small {
+  font: 500 13px/1.2 var(--font-body); letter-spacing: 0; color: var(--testo-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.impostazioni[open] > summary small { display: none; }
+.impostazioni-righe { display: flex; flex-direction: column; gap: 8px; padding: 0 8px 8px; }
+.impostazioni-righe .auto { background: var(--superficie); }
+/* bordino bianco sui pulsanti della barra, come quelli in basso; pulsanti in basso semitrasparenti */
+.barra-btn, .raggio select, .cat-btn { box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+.pill-azione.rifugio { background: rgba(211, 47, 47, .78); }
+.pill-azione.acqua { background: rgba(52, 51, 243, .78); }
+.pill-azione { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
