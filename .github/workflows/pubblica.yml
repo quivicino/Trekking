@@ -65,12 +65,17 @@ jobs:
 
       - uses: actions/configure-pages@v6
 
+      # nome diverso a ogni tentativo: con "Re-run" il pacchetto del tentativo prima resta e deploy-pages
+      # si ferma con "Multiple artifacts named github-pages"
       - uses: actions/upload-pages-artifact@v5
         with:
           path: .
+          name: github-pages-${{ github.run_attempt }}
 
       - id: deploy
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
       # ✅ dati riscaricati · ⚠️ in parte · ❌ qualcosa è andato storto · ⚠️ Overpass non ha risposto e sono rimasti i dati vecchi
       - name: Notifica sull'iPhone
