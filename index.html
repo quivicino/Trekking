@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=38">
 </head>
 <body>
   <div class="app">
@@ -150,11 +150,12 @@
 
       <div class="percorso-info" id="percorso-info" hidden>
         <div class="pi-testa">
-          <div class="pi-num" id="pi-num"></div>
+          <button class="pi-titolo" id="pi-titolo" type="button" aria-label="Cambia il percorso"></button>
           <button class="pi-chiudi" id="btn-pi-chiudi" type="button" aria-label="Chiudi il riquadro del percorso (il percorso resta sulla mappa)">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
           </button>
         </div>
+        <div class="pi-num" id="pi-num"></div>
         <div class="pi-profilo" id="pi-profilo" role="img" aria-label="Profilo altimetrico del percorso"></div>
         <div class="pi-fondo" id="pi-fondo"></div>
         <div class="pi-sotto">
@@ -377,7 +378,7 @@
             <li>Sulla mappa il percorso è una linea <b style="color:#d61f8c">fucsia</b> con <b>A</b> (partenza) e <b>B</b> (arrivo).</li>
             <li>In basso un riquadro dice lunghezza, salita, discesa, tempo stimato e quota minima e massima; sotto c'è il <b>profilo altimetrico</b>:
               tocca o trascina il dito sul profilo e un pallino ti mostra quel punto sulla mappa, con distanza dalla partenza e quota.</li>
-            <li>Sotto il profilo ci sono i <b>sentieri usati</b>, nell'ordine, con il segnavia e i chilometri: toccane uno per aprire la sua scheda. Un riquadro giallo <b>⚠</b> avvisa quanti chilometri sono su <b>sentieri NON CAI</b>, senza segnavia: possono essere poco tracciati o chiusi.
+            <li>Sotto il profilo ci sono i <b>sentieri usati</b>, nell'ordine, con il segnavia e i chilometri: ognuno ha un colore, lo stesso del suo tratto sulla mappa e nel profilo (in fucsia i tratti fuori dai sentieri). Sono pulsanti: toccane uno per aprire la sua scheda. Un riquadro giallo <b>⚠</b> avvisa quanti chilometri sono su <b>sentieri NON CAI</b>, senza segnavia: possono essere poco tracciati o chiusi.
               <b>Salva GPX</b> salva il percorso come file per un'altra app di navigazione.</li>
             <li>La freccia in alto a sinistra ti guida lungo il percorso, come su un sentiero. La barra in alto riassume il percorso: toccala per cambiarlo;
               la <b>X</b> della barra, o quella nel riquadro della freccia, chiude il percorso. La <b>X</b> del riquadro in basso lo nasconde e lascia il percorso sulla mappa: tocca la barra in alto per riaprirlo.</li>
@@ -462,9 +463,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="config.js?v=39"></script>
-  <script src="core.js?v=25"></script>
-  <script src="app.js?v=39"></script>
+  <script src="config.js?v=40"></script>
+  <script src="core.js?v=26"></script>
+  <script src="app.js?v=41"></script>
   <script src="installa.js?v=20"></script>
 
   <!-- Statistiche d'uso anonime, senza cookie: https://trekking.goatcounter.com

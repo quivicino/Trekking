@@ -924,3 +924,37 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .pill-azione.rifugio { background: rgba(211, 47, 47, .78); }
 .pill-azione.acqua { background: rgba(52, 51, 243, .78); }
 .pill-azione { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+
+/* ---- v40: niente sovrapposizioni con un percorso attivo ---- */
+/* il nome del percorso è il titolo del riquadro altimetrico (toccalo per cambiarlo) */
+.pi-titolo {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 2px 0; border: 0; background: none;
+  text-align: left; color: var(--testo); font: 700 17px/1.2 var(--font-display);
+}
+.pi-titolo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pi-titolo svg { flex: none; color: var(--percorso); }
+.percorso-info .pi-num { margin-top: 2px; font-size: 16px; }
+/* con il riquadro aperto i due pulsanti stanno in riga, più piccoli, sopra il riquadro */
+.fab-azioni.compatte { flex-direction: row; gap: 8px; right: 12px; flex-wrap: wrap; }
+.fab-azioni.compatte .pill-azione { height: 40px; padding: 0 14px; font-size: 15px; }
+/* riquadro della freccia più compatto: freccia e testi in riga, sotto la barra in alto */
+.gr-bussola { width: 72px; height: 72px; }
+.gr-freccia { width: 50px; height: 50px; }
+.gr-nord { top: 1px; font-size: 14px; }
+.guida-rotta { top: 12px; row-gap: 4px; column-gap: 10px; padding: 8px 46px 8px 8px; grid-template-areas: "b v" "b t"; }
+.guida-rotta .gr-testi b { font-size: 22px; }
+.guida-rotta .gr-testi span { font-size: 14px; }
+.corpo:has(.percorso-barra:not([hidden])) .guida-rotta { top: 76px; }
+/* sentieri usati: un colore per sentiero (come sulla mappa e nel profilo), pulsanti in rilievo per far capire che si toccano */
+.pi-sent {
+  position: relative; min-height: 34px; padding: 3px 10px 3px 5px; border: 0; border-radius: 10px;
+  border-left: 5px solid var(--col, var(--percorso));
+  background: linear-gradient(180deg, var(--superficie) 0%, color-mix(in srgb, var(--col, var(--percorso)) 14%, var(--superficie)) 100%);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--col, var(--percorso)) 55%, #000), 0 4px 8px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.8);
+  transform: translateY(-1px); transition: transform .08s, box-shadow .08s;
+}
+.pi-sent span { color: var(--testo); }
+.pi-sent:active { transform: translateY(2px); box-shadow: 0 0 0 color-mix(in srgb, var(--col, var(--percorso)) 55%, #000), 0 1px 3px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.6); }
+.pi-sent::after { content: "›"; margin-left: 2px; font: 700 16px/1 var(--font-body); color: var(--col, var(--percorso)); }
+.pi-usati { row-gap: 8px; }
+.pi-usati { max-height: none; overflow: visible; padding: 2px 2px 5px; }

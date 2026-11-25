@@ -1563,6 +1563,25 @@
   // escursionismo «hiking-mountain»). Sulla mappa la linea fucsia con A e B, in basso il profilo altimetrico;
   // la freccia del riquadro di navigazione guida lungo il percorso come su un sentiero.
   const COLORE_PERCORSO = "#d61f8c";
+  // un colore per ogni sentiero dell'itinerario (riquadro, profilo e mappa); i tratti fuori dai sentieri restano fucsia
+  const COLORI_SENTIERI = ["#1565c0", "#ef6c00", "#00897b", "#7b1fa2", "#c62828", "#2e7d32", "#5d4037", "#0097a7"];
+  const coloreSentiero = (k) => (k >= 0 ? COLORI_SENTIERI[k % COLORI_SENTIERI.length] : COLORE_PERCORSO);
+  let gruppoTratti = null;
+  // Sulla mappa: i tratti di ogni sentiero usato, ciascuno con il suo colore, sopra la linea fucsia
+  function coloraTratti(p) {
+    if (!gruppoTratti) gruppoTratti = L.layerGroup();
+    gruppoTratti.clearLayers();
+    livelli.percorso.addLayer(gruppoTratti);
+    const seg = p.seg || [];
+    let i = 1;
+    while (i < p.punti.length) {
+      const k = seg[i];
+      let j = i;
+      while (j + 1 < p.punti.length && seg[j + 1] === k) j++;
+      if (k >= 0) L.polyline(p.punti.slice(i - 1, j + 1), { color: coloreSentiero(k), weight: 6, opacity: .95, interactive: false }).addTo(gruppoTratti);
+      i = j + 1;
+    }
+  }
   const percorsoAttivo = () => stato.percorso || null;
   livelli.percorso = L.layerGroup().addTo(mappa);
   livelli.percorso.setZIndex && livelli.percorso.setZIndex(5);
@@ -1698,11 +1717,14 @@
   function tempoPercorso(p) { return QT.tempoStimato(p.metri, p.su || 0, p.giu || 0); }
   function aggiornaModoPercorso() {
     const p = percorsoAttivo();
-    $("percorso-barra").hidden = !p;
+    // il nome del percorso è il titolo del riquadro; la barra in alto compare solo con il riquadro chiuso
+    $("percorso-barra").hidden = !p || !infoChiusa;
     $("percorso-info").hidden = !p || infoChiusa;
+    document.querySelector(".fab-azioni").classList.toggle("compatte", !!p && !infoChiusa);
     $("btn-percorso").setAttribute("aria-pressed", String(!!p));
     if (p) {
       $("percorso-testo").textContent = `${p.daGps ? "Da qui" : p.da} → ${p.a} · ${QT.formattaKm(p.metri)}`;
+      $("pi-titolo").innerHTML = `<span>${esc(p.daGps ? "Da qui" : p.da)} → ${esc(p.a)}</span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
       const num = [`<span>${QT.formattaKm(p.metri)}</span>`];
       if (p.su != null) num.push(`<span>↗ ${p.su} m</span>`);
       if (p.giu != null) num.push(`<span>↘ ${p.giu} m</span>`);
@@ -1712,11 +1734,13 @@
       // Sentieri usati, nell'ordine (tocca per aprire la scheda), e avviso per i tratti fuori dai sentieri CAI
       const u = QT.sentieriUsati(p, p.sentieri || stato.sentieri);
       p.usati = u.usati;
+      p.seg = u.seg;
+      coloraTratti(p);
       const kmCorti = (m) => QT.formattaDistanza(m);
       const righe = [];
       righe.push(u.usati.length
         ? `<div class="pi-usati"><span class="pi-etic">Sentieri usati</span>${u.usati.map((x, i) =>
-          `<button type="button" class="pi-sent" data-i="${i}">${segnavia(x.s, 22)}<span>${esc(x.s.r || QT.titoloSentiero(x.s))}</span><small>${kmCorti(x.metri)}</small></button>`).join("")}</div>`
+          `<button type="button" class="pi-sent" data-i="${i}" style="--col:${coloreSentiero(i)}">${segnavia(x.s, 22)}<span>${esc(x.s.r || QT.titoloSentiero(x.s))}</span><small>${kmCorti(x.metri)}</small></button>`).join("")}</div>`
         : '<p class="pi-avviso">Nessun sentiero CAI dell\'app su questo percorso.</p>');
       if (u.segnatiAltri >= 80) righe.push(`<p class="pi-nota">e ${kmCorti(u.segnatiAltri)} su altri sentieri segnati, fuori dalla zona caricata</p>`);
       const nonCai = u.fuori.sentiero + u.fuori.sterrata;
@@ -1734,16 +1758,17 @@
   function posizionaAzioni() {
     const box = $("percorso-info"), az = document.querySelector(".fab-azioni");
     if (!az) return;
-    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 26) + "px";
+    az.style.bottom = box.hidden ? "" : (box.offsetHeight + 40) + "px";
   }
   window.addEventListener("resize", posizionaAzioni);
   // Croce del riquadro: lo chiude, il percorso resta sulla mappa; si riapre toccando la barra in alto
   let infoChiusa = false;
   $("btn-pi-chiudi").addEventListener("click", () => {
     infoChiusa = true;
-    $("percorso-info").hidden = true;
+    aggiornaModoPercorso();
     posizionaAzioni();
   });
+  $("pi-titolo").addEventListener("click", () => { inquadraPercorso(); apriPercorso(); });
 
   // ---------- Profilo altimetrico del percorso ----------
   // Tocca o trascina il dito sul profilo: un pallino mostra quel punto sulla mappa, con distanza e quota.
@@ -1761,12 +1786,29 @@
     let griglia = "";
     for (let k = passoKm; k * 1000 < tot; k += passoKm) griglia += `<path class="griglia" d="M${x(k * 1000).toFixed(1)} 0V${H}"/>`;
     box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${griglia}` +
-      `<path class="area" d="${linea}L${W} ${H}L0 ${H}Z"/><path class="linea" d="${linea}"/>` +
+      `<path class="area" d="${linea}L${W} ${H}L0 ${H}Z"/><path class="linea" d="${linea}"/>${pezziColorati(p, serie, x, y)}` +
       `<path class="cursore" id="pi-cursore" d="M0 0V${H}" visibility="hidden"/></svg>` +
       `<span class="pi-asse" style="left:0;top:0">${QT.formattaQuota(Math.round(max))}</span>` +
       `<span class="pi-asse" style="left:0;bottom:0">${QT.formattaQuota(Math.round(min))}</span>` +
       `<span class="pi-asse" style="right:0;bottom:0">${QT.formattaKm(tot)}</span>` +
       `<span class="pi-etichetta" id="pi-etichetta" hidden></span>`;
+  }
+  // Il profilo colorato come i sentieri: un pezzo di linea per ogni tratto sullo stesso sentiero
+  function pezziColorati(p, serie, x, y) {
+    if (!p.seg) return "";
+    const kDi = (s) => { const a = p.seg[s.i], b = p.seg[s.i + 1]; return a != null && a >= 0 ? a : (b != null ? b : -1); };
+    let out = "", da = 0;
+    for (let n = 1; n <= serie.length; n++) {
+      if (n < serie.length && kDi(serie[n]) === kDi(serie[da])) continue;
+      const k = kDi(serie[da]);
+      if (k >= 0) {
+        const pezzo = serie.slice(da, Math.min(n + 1, serie.length));
+        const d = pezzo.map((s, j) => (j ? "L" : "M") + x(s.m).toFixed(1) + " " + y(s.q).toFixed(1)).join("");
+        out += `<path class="linea" style="stroke:${coloreSentiero(k)};stroke-width:3.5" d="${d}"/>`;
+      }
+      da = n;
+    }
+    return out;
   }
   function puntoDelProfilo(e) {
     const p = percorsoAttivo();
