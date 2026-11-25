@@ -1005,6 +1005,7 @@
     };
     const usati = [], perId = new Map(), fuori = { sentiero: 0, sterrata: 0, strada: 0 };
     let segnatiAltri = 0, ultimo = null;
+    const segU = new Array(perc.punti.length).fill(null); // tratto i (dal punto i-1 al punto i) → sentiero usato
     for (let i = 1; i < perc.punti.length; i++) {
       const m = perc.dist[i] - perc.dist[i - 1];
       if (!(m > 0)) continue;
@@ -1015,12 +1016,16 @@
         let u = perId.get(s.i);
         if (!u) { u = { s, metri: 0 }; perId.set(s.i, u); usati.push(u); }
         u.metri += m;
+        segU[i] = u;
         ultimo = u;
       } else if (t && t.s) segnatiAltri += m;
       else fuori[(t && t.f) || "strada"] += m;
     }
     // i sentieri toccati solo per pochi metri (un incrocio) non contano
-    return { usati: usati.filter((u) => u.metri >= 80), fuori, segnatiAltri };
+    const tenuti = usati.filter((u) => u.metri >= 80);
+    // seg[i] = posizione in "usati" del sentiero del tratto i, -1 se fuori dai sentieri (o toccato per pochi metri)
+    const seg = segU.map((u) => (u ? tenuti.indexOf(u) : -1));
+    return { usati: tenuti, fuori, segnatiAltri, seg };
   }
 
   const API = {
