@@ -1637,6 +1637,7 @@
 
   function apriPercorso() {
     chiudiAnteprima();
+    chiudiVai();
     $("percorso").hidden = false;
     $("btn-percorso").setAttribute("aria-expanded", "true");
     const a = $("perc-a");
@@ -2011,7 +2012,21 @@
     navigator.geolocation.watchPosition(suPosizione, erroreGps, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
   }
 
-  // ---------- Ricerca luogo ----------
+  // ---------- Ricerca luogo (finestra "Vai a") ----------
+  function apriVai() {
+    chiudiFormPercorso();
+    $("form-cerca").hidden = false;
+    $("btn-vai").setAttribute("aria-expanded", "true");
+    setTimeout(() => $("cerca-indirizzo").focus(), 50);
+  }
+  function chiudiVai() {
+    if ($("form-cerca").hidden) return false;
+    $("form-cerca").hidden = true;
+    $("btn-vai").setAttribute("aria-expanded", "false");
+    return true;
+  }
+  $("btn-vai").addEventListener("click", () => { if (!chiudiVai()) apriVai(); });
+  $("btn-chiudi-vai").addEventListener("click", chiudiVai);
   $("form-cerca").addEventListener("submit", async (e) => {
     e.preventDefault();
     const q = $("cerca-indirizzo").value.trim();
@@ -2023,6 +2038,7 @@
       if (!primo) { messaggio("Luogo non trovato. Prova ad aggiungere il comune o la provincia.", true); return; }
       stato.seguiGps = false;
       $("cerca-indirizzo").blur();
+      chiudiVai();
       impostaCentro(+primo.lat, +primo.lon, false);
     } catch (err) {
       messaggio("Ricerca non riuscita. Controlla la connessione.", true);
@@ -2205,7 +2221,7 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!$("cat-menu").hidden) { apriCategorie(false); $("categoria").focus(); return; }
-    if (!chiudiGuida() && !chiudiScheda() && !chiudiFormPercorso()) chiudiElenco();
+    if (!chiudiGuida() && !chiudiScheda() && !chiudiFormPercorso() && !chiudiVai()) chiudiElenco();
   });
 
   // ---------- Lettura vocale dei riquadri ----------
@@ -2293,6 +2309,15 @@
   }
   document.addEventListener("visibilitychange", aggiornaSchermoAcceso);
   document.addEventListener("pointerdown", () => { if (autoAttivo && !bloccoSchermo) aggiornaSchermoAcceso(); }, { passive: true });
+
+  // Riassunto delle impostazioni sul pulsante chiuso, es. "120 s · Topografica"
+  function riassuntoImpostazioni() {
+    const testo = (id) => { const s = $(id); return s && s.selectedOptions[0] ? s.selectedOptions[0].textContent : ""; };
+    const auto = $("auto-refresh").value === "0" ? "refresh spento" : $("auto-refresh").value + " s";
+    $("imp-riassunto").textContent = [auto, testo("sfondo")].join(" · ");
+  }
+  for (const id of ["auto-refresh", "suoni", "sfondo", "lettura"]) $(id).addEventListener("change", riassuntoImpostazioni);
+  setTimeout(riassuntoImpostazioni, 0);
 
   // All'avvio l'auto-refresh è sempre quello di config.js (0 = spento): l'app riparte dall'ultima posizione e non la sposta
   const secAuto = [0, 30, 60, 120].includes(+cfg.autoRefreshSecondi) ? +cfg.autoRefreshSecondi : 0;

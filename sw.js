@@ -1,11 +1,11 @@
 // Qui-Trekking – service worker: rende l'app installabile e apribile offline.
 // Cambia il nome della cache a ogni aggiornamento: così l'iPhone capisce che c'è una versione nuova.
-const CACHE = "trekking-40";
+const CACHE = "trekking-41";
 // Leaflet viene da unpkg: lo si tiene anche lui, se no senza rete la mappa non parte
 const ESTERNI = ["https://unpkg.com/leaflet@1.9.4/dist/leaflet.js", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"];
 // Tessere della mappa salvate con «Salva per l'uso senza rete» (le mette l'app)
 const MAPPE = "mappe-salvate";
-const FILE = ["./", "index.html", "style.css", "config.js", "core.js", "app.js", "installa.js", "favicon-64.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "manifest.webmanifest"];
+const FILE = ["./", "index.html", "style.css", "config.js", "core.js", "app.js", "installa.js", "favicon-64.png", "apple-touch-icon.png", "icon-192.png", "logo-qui-trekking-scuro.png", "logo-qui-trekking-chiaro.png", "icon-512.png", "icon-maskable-512.png", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
   // "reload": scarica i file dal sito, non dalla memoria del browser
