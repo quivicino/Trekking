@@ -1761,6 +1761,8 @@
     az.style.bottom = box.hidden ? "" : (box.offsetHeight + 40) + "px";
   }
   window.addEventListener("resize", posizionaAzioni);
+  // il riquadro cambia altezza anche dopo (caratteri che arrivano dopo, avviso che va a capo): i pulsanti lo seguono
+  if (window.ResizeObserver) new ResizeObserver(() => posizionaAzioni()).observe($("percorso-info"));
   // Croce del riquadro: lo chiude, il percorso resta sulla mappa; si riapre toccando la barra in alto
   let infoChiusa = false;
   $("btn-pi-chiudi").addEventListener("click", () => {
